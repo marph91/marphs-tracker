@@ -6,9 +6,10 @@ import time
 class GpsReader:
     """Read GPS coordinates from modem AT+CGNSINF."""
 
-    def __init__(self, pmu, modem):
+    def __init__(self, pmu, modem, log=print):
         self.pmu = pmu
         self.modem = modem
+        self.log = log
 
     def enable(self):
         self.pmu.enable_gps_antenna()
@@ -43,11 +44,16 @@ class GpsReader:
         return {"lat": lat, "lon": lon}
 
     def get_fix(self, timeout_s=120, poll_s=2):
-        deadline = time.ticks_add(time.ticks_ms(), timeout_s * 1000)
-        while time.ticks_diff(deadline, time.ticks_ms()) > 0:
+        start_time_ms = time.ticks_ms()
+        deadline_ms = time.ticks_add(start_time_ms, timeout_s * 1000)
+        while time.ticks_diff(deadline_ms, time.ticks_ms()) > 0:
             response = self.modem.send_at("AT+CGNSINF", wait=poll_s)
+            current_time_s = time.ticks_diff(time.ticks_ms(), start_time_ms) // 1000
             fix = self._parse_fix(response)
             if fix:
+                self.log(f"GPS: Fix after {current_time_s} seconds")
+                self.log(fix)
                 return fix
+            self.log(f"GPS: No fix after {current_time_s} seconds")
             time.sleep(poll_s)
         return None

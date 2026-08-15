@@ -17,7 +17,7 @@ def main():
         "pmu": pmu,
         "modem": modem,
         "scan_wifi": scan_wifi,
-        "gps": GpsReader(pmu, modem),
+        "gps": GpsReader(pmu, modem, print),
         "nbiot": NbiotClient(modem, config),
         "log": print,
         "sleep_minutes": lambda minutes: machine.deepsleep(int(minutes) * 60 * 1000),
