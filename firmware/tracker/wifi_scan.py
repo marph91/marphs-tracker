@@ -1,0 +1,75 @@
+"""WiFi scan helpers and device scan wrapper."""
+
+try:
+    import network
+except ImportError:
+    network = None  # needed for unit testing on native device
+
+
+def _decode_ssid(ssid):
+    if isinstance(ssid, bytes):
+        return ssid.decode("utf-8", "ignore")
+    return ssid or ""
+
+
+def format_bssid(bssid):
+    """Format BSSID bytes or string as aa:bb:cc:dd:ee:ff."""
+    if isinstance(bssid, (bytes, bytearray)):
+        return ":".join(f"{b:02x}" for b in bssid)
+    if isinstance(bssid, str):
+        return bssid.lower()
+    raise TypeError("unsupported bssid type")
+
+
+def normalize_scan_results(scan_results):
+    """Convert raw WLAN scan tuples into normalized dicts."""
+    normalized = []
+    for entry in scan_results:
+        ssid = _decode_ssid(entry[0])
+        bssid = format_bssid(entry[1])
+        rssi = entry[3]
+        normalized.append(
+            {
+                "ssid": ssid,
+                "bssid": bssid,
+                "rssi": rssi,
+            }
+        )
+    return normalized
+
+
+def home_ssid_present(results, home_ssid):
+    """Return True if home_ssid appears in scan results."""
+    if not home_ssid:
+        return False
+    for ap in results:
+        if ap["ssid"] == home_ssid:
+            return True
+    return False
+
+
+def top_aps(results, n=5):
+    """Return top N APs by RSSI."""
+    ranked = sorted(results, key=lambda ap: ap["rssi"], reverse=True)
+    top = ranked[:n]
+    return [
+        {
+            "macAddress": ap["bssid"],
+            "signalStrength": ap["rssi"],
+        }
+        for ap in top
+    ]
+
+
+def scan_wifi():
+    """Activate WiFi, scan APs, deactivate WiFi, return normalized results."""
+    if network is None:
+        raise RuntimeError("network module unavailable")
+
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    try:
+        raw = wlan.scan()
+    finally:
+        wlan.active(False)
+    return normalize_scan_results(raw)
