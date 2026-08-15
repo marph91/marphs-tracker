@@ -53,11 +53,6 @@ def run_cycle(config, hw_functions):
         _finish()
         return CycleState.MODEM_POWER_ON_FAILED
 
-    if not hw_functions["modem"].check_sim():
-        log("SIM not ready")
-        _finish()
-        return CycleState.SIM_NOT_READY
-
     payload = None
     outcome = None
 
@@ -84,6 +79,11 @@ def run_cycle(config, hw_functions):
         payload = build_gps_payload(fix["lat"], fix["lon"])
         outcome = CycleState.GPS_SENT
         log("GPS fix acquired: {}, {}".format(fix["lat"], fix["lon"]))
+
+    if not hw_functions["modem"].check_sim():
+        log("SIM not ready")
+        _finish()
+        return CycleState.SIM_NOT_READY
 
     try:
         hw_functions["nbiot"].connect()
