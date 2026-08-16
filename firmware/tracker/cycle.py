@@ -68,6 +68,7 @@ def run_cycle(config, hw_functions):
             return CycleState.NO_FIX
 
         try:
+            hw_functions["gps"].config()
             fix = hw_functions["gps"].get_fix(config.GPS_FIX_TIMEOUT_S)
         finally:
             hw_functions["gps"].disable()

@@ -26,6 +26,11 @@
   - https://shop.dptechnics.com/home/1-250mb-worldwide-m2m-sim.html
 - [ ] Selfprinted case
 
+---
+
+- https://www.simcom.com/product/SIM7080G.html
+- AT command cheat sheet: https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/blob/master/datasheet/SIM7070_SIM7080_SIM7090%20Series_AT%20Command%20Manual_V1.05.pdf
+
 ##
 
 - AES ECB: https://www.luisllamas.es/en/how-to-use-aes128-on-esp32/#extra-bonus-ecb-encryption

@@ -11,6 +11,61 @@ class GpsReader:
         self.modem = modem
         self.log = log
 
+    def config(self):
+        response = self.modem.send_at("AT+CGNSPWR=0", wait=2)
+        self.log(response)
+
+        # GPS,GLONASS,BEIDOU,GALILEAN,QZSS
+        # "For <glo mode>,<bd mode>,<gal mode> and <qzss mode>,
+        #  Only one of the four parameters can be set to 1."
+        # https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/blob/1f49d041e11c1af5ca7c32bb604f65da8e4394ae/examples/MinimalModemGPSExample/MinimalModemGPSExample.ino#L154
+        # response = self.modem.send_at("AT+CGNSMOD?", wait=2)
+        # log(response)
+        response = self.modem.send_at("AT+CGNSMOD=1,0,0,1,0", wait=2)
+        self.log(f"GPS: Setting systems successful? {'OK' in response}")
+
+        # response = self.modem.send_at("AT+SGNSCFG?", wait=2)
+        # log(response)
+
+        # <mode>
+        # 0 Turn off GNSS.
+        # 1 Turn on GNSS and get location information once.
+        # 2 Turn on GNSS and get multiple location information.
+
+        # mode 1:
+        # <powerlevel>
+        # 0 Use all technologies available to calculate location.
+        # 1 Use all low power technologies to calculate location.
+        # 2 Use only low and medium power technologies to calculate location.
+        # response = self.modem.send_at("AT+SGNSCMD=1,0", wait=2)
+        # self.log(response)
+        # self.log(f"GPS: Setting command successful? {'OK' in response}")
+
+        # mode 2:
+        # <minInterval>
+        # minInterval is the minimum time interval in milliseconds that must
+        # elapse between position reports. default value is 1000.
+        # <minDistance>
+        # Minimum distance in meters that must be traversed between position
+        # reports. Setting this interval to 0 will be a pure time-based
+        # tracking/batching.
+        # <accuracy>
+        # 0 Accuracy is not specified, use default.
+        # 1 Low Accuracy for location is acceptable.
+        # 2 Medium Accuracy for location is acceptable.
+        # 3 Only High Accuracy for location is acceptable.
+        response = self.modem.send_at("AT+SGNSCMD=2,1000,0,1", wait=2)
+        self.log(response)
+        self.log(f"GPS: Setting command successful? {'OK' in response}")
+
+        # Turn off GNSS
+        response = self.modem.send_at("AT+SGNSCMD=0", wait=2)
+        self.log(response)
+        self.log(f"GPS: Configuration finished successful? {'OK' in response}")
+
+        response = self.modem.send_at("AT+CGNSPWR=1", wait=2)
+        self.log(response)
+
     def enable(self):
         self.pmu.enable_gps_antenna()
         response = self.modem.send_at("AT+CGNSPWR=1", wait=2)
@@ -48,6 +103,7 @@ class GpsReader:
         deadline_ms = time.ticks_add(start_time_ms, timeout_s * 1000)
         while time.ticks_diff(deadline_ms, time.ticks_ms()) > 0:
             response = self.modem.send_at("AT+CGNSINF", wait=poll_s)
+            # self.log(response)
             current_time_s = time.ticks_diff(time.ticks_ms(), start_time_ms) // 1000
             fix = self._parse_fix(response)
             if fix:
