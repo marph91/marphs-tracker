@@ -88,7 +88,7 @@ def run_cycle(config, hw_functions):
 
     try:
         hw_functions["nbiot"].connect()
-        hw_functions["nbiot"].post(config.HTTPS_URL, payload)
+        hw_functions["nbiot"].post_json(config.HTTPS_URL, payload)
     except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
         log(f"NB-IoT POST failed: {exc}")
         return CycleState.POST_FAILED if payload else CycleState.CONFIG_ERROR
