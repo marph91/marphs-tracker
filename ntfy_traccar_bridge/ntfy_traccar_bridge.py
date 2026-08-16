@@ -1,7 +1,7 @@
+import base64
 import json
 
 import requests
-import xxtea
 
 
 class MessageConverter:
@@ -15,25 +15,26 @@ class MessageConverter:
         # https://docs.ntfy.sh/subscribe/api/#subscribe-as-json-stream
         try:
             message_json = json.loads(message)
-            # if message_json["event"] != "message":
-            #     return
-            message_decrypted = xxtea.decrypt_hex(
-                message_json["message"], self.key
-            ).decode("utf-8")
-            message_decrypted_splitted = message_decrypted.split(",")
-            match message_decrypted_splitted[0]:
+            if message_json["event"] != "message":
+                return
+            message_deobfuscated = json.loads(
+                base64.b64decode(message_json["message"]).decode()
+            )
+            print(message_json, message_deobfuscated)
+            match message_deobfuscated["type"]:
                 case "gps":
-                    lat, lon = map(float, message_decrypted_splitted[2:3])
+                    lat = message_deobfuscated["lat"]
+                    lon = message_deobfuscated["lon"]
                 case "wifi":
                     return
                 case _:
                     print("Unknown format")
                     return
 
-            print(message_json, message_decrypted)
             self.convert_to_traccar_format(lat, lon, int(message_json["time"]) * 1000)
-        except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
+        except Exception as exc:  # want to catch all exceptions
             print(exc)
+            raise
 
     def convert_to_traccar_format(self, lat, lon, timestamp):
         # Actually, it's OsmAnd format: https://www.traccar.org/osmand/
@@ -49,16 +50,6 @@ def main():
     for line in resp.iter_lines():
         if line:
             message_converter.handle_ntfy_message(line)
-    # # http1.1 seems to be broken. requests doesn't support http2.
-    # with(
-    #     httpx.Client(http2=True, timeout=None) as client,
-    #     client.stream(
-    #         "GET",
-    #         "https://ntfy.adminforge.de/marphs-tracker/json",
-    #     ) as response,
-    # ):
-    #     for line in response.iter_lines():
-    #         message_converter.handle_ntfy_message(line)
 
 
 if __name__ == "__main__":

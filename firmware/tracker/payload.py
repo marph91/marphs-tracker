@@ -1,8 +1,12 @@
 """Build unified JSON payloads for HTTPS POST."""
 
 try:
+    # micropython
+    import ubinascii as binascii
     import ujson as json
 except ImportError:
+    # python
+    import binascii
     import json
 
 
@@ -26,3 +30,7 @@ def build_gps_payload(lat, lon):
 def serialize_payload(payload):
     """Serialize payload dict to JSON string."""
     return json.dumps(payload, separators=(",", ":"))
+
+
+def obfuscate_payload(payload):
+    return binascii.b2a_base64(payload.encode()).decode().strip()
