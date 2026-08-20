@@ -20,6 +20,7 @@ class NbiotClient:
         self.log = log
 
     def _send_http_chunk(self, conn_id, data):
+        self.log("chunk:", data)
         response = self.modem.send_at(f"AT+CASEND={conn_id},{len(data)}", wait=2)
         self.log(response)
         if ">" not in response and "OK" not in response and "DOWNLOAD" not in response:
@@ -156,7 +157,6 @@ class NbiotClient:
             "\r\n"
         )
 
-        self.log("chunk:", header_data)
         if not self._send_http_chunk(conn_id, header_data):
             raise NbiotError("failed to send HTTP headers")
         # TODO: https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/issues/96#issuecomment-2586446251

@@ -50,15 +50,15 @@ def test_home_ssid_skips_transmit(hw_functions):
 
 def test_wifi_path_posts_without_gps(hw_functions):
     config = default_config
-    hw_functions["scan_wifi"].return_value = _sample_results(config.WIFI_TOP_N + 1)
+    hw_functions["scan_wifi"].return_value = _sample_results(config.WIFI_MIN_APS + 1)
     hw_functions["gps"].get_fix.return_value = {"lat": 1.0, "lon": 2.0}
     hw_functions["nbiot"].connect.return_value = True
 
     outcome = run_cycle(config, hw_functions)
     assert outcome == CycleState.WIFI_SENT
     hw_functions["gps"].enable.assert_not_called()
-    hw_functions["nbiot"].post.assert_called_once()
-    payload = hw_functions["nbiot"].post.call_args[0][1]
+    hw_functions["nbiot"].post_json.assert_called_once()
+    payload = hw_functions["nbiot"].post_json.call_args[0][1]
     assert payload["type"] == "wifi"
     assert len(payload["wifiAccessPoints"]) == config.WIFI_TOP_N
 
@@ -72,7 +72,7 @@ def test_gps_path_disables_gps_before_nbiot(hw_functions):
     assert outcome == CycleState.GPS_SENT
     assert hw_functions["gps"].disable.call_count == 1
     assert hw_functions["nbiot"].connect.call_count == 1
-    assert hw_functions["nbiot"].post.call_count == 1
+    assert hw_functions["nbiot"].post_json.call_count == 1
 
 
 def test_gps_timeout_skips_post(hw_functions):
