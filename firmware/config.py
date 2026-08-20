@@ -1,4 +1,4 @@
-# Tracker configuration - edit before deploying to device.
+# Central tracker configuration - used by the device and other scripts.
 
 # Time between tracking attempts. Affects power consumption and data usage.
 SLEEP_MINUTES = 60
@@ -8,10 +8,10 @@ SLEEP_MINUTES = 60
 # If this SSID is detected during the Wi-Fi scan,
 # the tracker assumes that it is at home and does not
 # transmit any tracking data.
-HOME_SSID = "YourHomeSSID"
+HOME_SSID = "YourHomeWifiSSID"
 
-# HTTP endpoint receiving the payload.
-HTTPS_URL = "https://example.com/ingest"
+# HTTP endpoint receiving the payload from the device.
+NTFY_URL = "https://publix.ntfy/topic/json"
 
 # If fewer than this number of Wi-Fi access points
 # are detected, GNSS is used instead.
@@ -27,4 +27,6 @@ NBIOT_USER = ""
 NBIOT_PASSWORD = ""
 NBIOT_BANDS = ""
 
-DEVICE_ID = ""
+# Traccar settings
+TRACCAR_URL = "http://home.lab:5055"
+DEVICE_ID = 0

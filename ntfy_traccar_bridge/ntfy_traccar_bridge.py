@@ -1,15 +1,20 @@
 import base64
 import json
+import pathlib
+import sys
 
 import requests
+
+sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "firmware"))
+
+import config as firmware_config
 
 
 class MessageConverter:
     """Converts a ntfy message to a traccar message."""
 
     def __init__(self) -> None:
-        self.key = b"1234567890abcdef"  # TODO: read from config file
-        self.traccar_url = "http://192.168.111.23:5055"  # TODO: read from config file
+        self.beacondb_url = "https://api.beacondb.net/v1/geolocate"
 
     def handle_ntfy_message(self, message):
         # https://docs.ntfy.sh/subscribe/api/#subscribe-as-json-stream
@@ -20,13 +25,22 @@ class MessageConverter:
             message_deobfuscated = json.loads(
                 base64.b64decode(message_json["message"]).decode()
             )
-            print(message_json, message_deobfuscated)
+
             match message_deobfuscated["type"]:
                 case "gps":
                     lat = message_deobfuscated["lat"]
                     lon = message_deobfuscated["lon"]
                 case "wifi":
-                    return
+                    location = self.get_location_from_beacondb(
+                        message_deobfuscated["wifiAccessPoints"]
+                    )
+                    if location is None:
+                        print(
+                            f"Location couldn't be resolved: {message_deobfuscated['wifiAccessPoints']}"
+                        )
+                        return
+                    lat = location["lat"]
+                    lon = location["lng"]
                 case _:
                     print("Unknown format")
                     return
@@ -36,17 +50,36 @@ class MessageConverter:
             print(exc)
             raise
 
+    def get_location_from_beacondb(self, access_points):
+        # https://beacondb.net/
+        # https://ichnaea.readthedocs.io/en/latest/api/geolocate.html
+
+        data = {
+            "wifiAccessPoints": access_points,
+            # don't resolve by IP, since this would yield the location of the scripts machine
+            "considerIp": False,
+        }
+        headers = {"User-Agent": "Marph's User Agent 1.0"}
+
+        response = requests.post(self.beacondb_url, json=data, headers=headers)
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError:
+            return None
+        return response.json().get("location")
+
     def convert_to_traccar_format(self, lat, lon, timestamp):
         # Actually, it's OsmAnd format: https://www.traccar.org/osmand/
-        print(f"{self.traccar_url}?id=0&{lat=}&{lon=}&{timestamp=}")
-        response = requests.get(f"{self.traccar_url}?id=0&{lat=}&{lon=}&{timestamp=}")
+        response = requests.get(
+            f"{firmware_config.TRACCAR_URL}?id={firmware_config.DEVIE_ID}&{lat=}&{lon=}&{timestamp=}"
+        )
         response.raise_for_status()
 
 
 def main():
     message_converter = MessageConverter()
 
-    resp = requests.get("https://ntfy.adminforge.de/marphs-tracker/json", stream=True)
+    resp = requests.get(firmware_config.NTFY_URL, stream=True)
     for line in resp.iter_lines():
         if line:
             message_converter.handle_ntfy_message(line)

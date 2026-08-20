@@ -27,11 +27,7 @@ if __name__ == "__main__":
     # sample data: "nmcli dev wifi"
     data = {
         "wifiAccessPoints": [
-            # {"macAddress": "0C:C5:74:47:16:10", "signalStrength": -51},
-            {"macAddress": "EC:6C:9A:13:E1:CE", "signalStrength": -30},
-            {"macAddress": "1E:ED:6F:CD:74:46", "signalStrength": -30},
-            {"macAddress": "78:DD:12:BE:31:52", "signalStrength": -30},
-            {"macAddress": "80:3F:5D:68:D3:D6", "signalStrength": -30},
+            {"macAddress": "00:00:08:EE:7A:A5", "signalStrength": -50}
         ],
         "considerIp": False,
     }

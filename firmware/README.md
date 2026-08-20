@@ -15,7 +15,7 @@ Edit [`config.py`](config.py) before deployment:
 
 - `SLEEP_MINUTES` — wake interval (default `60`)
 - `HOME_SSID` — skip transmit when this network is seen
-- `HTTPS_URL` — ingest endpoint for POST requests
+- `NTFY_URL` — ingest endpoint for POST requests
 - `NBIOT_APN`, `NBIOT_OPERATOR`, `NBIOT_USER`, `NBIOT_PASSWORD`, `NBIOT_BANDS` — carrier settings (placeholders by default)
 
 ## POST payload
@@ -23,13 +23,18 @@ Edit [`config.py`](config.py) before deployment:
 WiFi path:
 
 ```json
-{"type":"wifi","wifiAccessPoints":[{"macAddress":"aa:bb:cc:dd:ee:ff","signalStrength":-51}]}
+{
+  "type": "wifi",
+  "wifiAccessPoints": [
+    { "macAddress": "aa:bb:cc:dd:ee:ff", "signalStrength": -51 }
+  ]
+}
 ```
 
 GPS path:
 
 ```json
-{"type":"gps","lat":48.137154,"lon":11.576124}
+{ "type": "gps", "lat": 48.137154, "lon": 11.576124 }
 ```
 
 ## Flashing
