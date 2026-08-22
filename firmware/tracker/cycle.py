@@ -26,7 +26,7 @@ def run_cycle(config, hw_functions):
     Pass them here to allow native tests with mocks.
     hw_functions must provide:
         pmu, modem,
-        scan_wifi, gps, nbiot, sleep, log
+        scan_wifi, gps, cellular_data, sleep, log
     """
     log = hw_functions.get("log", print)
 
@@ -35,7 +35,7 @@ def run_cycle(config, hw_functions):
         hw_functions["sleep"](config.SLEEP_MINUTES)
         return CycleState.PMU_INIT_FAILED
 
-    # WiFi scan runs before modem power-on so home detection avoids NB-IoT.
+    # WiFi scan runs before modem power-on so home detection avoids cellular data.
     results = hw_functions["scan_wifi"]()
     log(f"wifi scan found {len(results)} APs")
 
@@ -85,13 +85,13 @@ def run_cycle(config, hw_functions):
     log(f"{battery_percent=}")
 
     try:
-        hw_functions["nbiot"].connect()
-        hw_functions["nbiot"].post_json(config.NTFY_URL, payload)
+        hw_functions["cellular_data"].connect()
+        hw_functions["cellular_data"].post_json(config.NTFY_URL, payload)
     except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
-        log(f"NB-IoT POST failed: {exc}")
+        log(f"cellular data POST failed: {exc}")
         return CycleState.POST_FAILED if payload else CycleState.CONFIG_ERROR
     finally:
-        hw_functions["nbiot"].disconnect()
+        hw_functions["cellular_data"].disconnect()
 
     log(f"cycle outcome: {outcome}")
     hw_functions["sleep"](config.SLEEP_MINUTES)

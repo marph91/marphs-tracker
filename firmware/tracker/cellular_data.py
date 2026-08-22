@@ -1,4 +1,4 @@
-"""NB-IoT registration and HTTPS POST via SIM7080G AT commands."""
+"""NB-IoT or LTE-M registration and HTTPS POST via SIM7080G AT commands."""
 
 import re
 import time
@@ -6,12 +6,12 @@ import time
 from tracker.payload import obfuscate_payload, serialize_payload
 
 
-class NbiotError(Exception):
+class CellularDataError(Exception):
     pass
 
 
-class NbiotClient:
-    """Configure NB-IoT bearer and send HTTPS POST requests."""
+class CellularDataClient:
+    """Configure cellular data bearer and send HTTPS POST requests."""
 
     def __init__(self, modem, config, log=print):
         self.modem = modem
@@ -39,7 +39,7 @@ class NbiotClient:
         return secure, host, port, path
 
     def connect(self):
-        apn = self.config.NBIOT_APN
+        apn = self.config.CELLULAR_DATA_APN
 
         # Disable RF
         self.modem.send_at("AT+CFUN=0", wait=3, await_string="OK")
@@ -59,9 +59,9 @@ class NbiotClient:
         self.modem.send_at(f'AT+CGDCONT=1,"IP","{apn}"', wait=2, await_string="OK")
         self.modem.send_at(f'AT+CNCFG=0,1,"{apn}"', await_string="OK")
 
-        if self.config.NBIOT_USER:
+        if self.config.CELLULAR_DATA_USER:
             self.modem.send_at(
-                f'AT+CNCFG=0,3,"{self.config.NBIOT_USER}","{self.config.NBIOT_PASSWORD}"',
+                f'AT+CNCFG=0,3,"{self.config.CELLULAR_DATA_USER}","{self.config.CELLULAR_DATA_PASSWORD}"',
                 await_string="OK",
             )
 
@@ -79,7 +79,7 @@ class NbiotClient:
                 break
         else:
             self.log(response)
-            raise NbiotError("network registration timed out")
+            raise CellularDataError("network registration timed out")
         self.log("NB IOT: network registration successful")
 
         # activate network bearer
@@ -139,7 +139,7 @@ class NbiotClient:
 
         if received_bytes <= 0:
             self.log(response)
-            raise NbiotError("no HTTP response received")
+            raise CellularDataError("no HTTP response received")
 
         self.modem.send_at(
             f"AT+CARECV={conn_id},{received_bytes}",

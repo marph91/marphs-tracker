@@ -5,8 +5,8 @@ Battery-friendly location tracker for the [LilyGo T-SIM7080G S3](https://github.
 1. Deep sleep (timer wake, default 60 minutes)
 2. Scan WiFi
 3. If home SSID is visible → sleep again (no transmit)
-4. If ≥5 APs → POST top 5 BSSID/RSSI over NB-IoT HTTPS
-5. Else → acquire GPS fix → POST lat/lon over NB-IoT HTTPS
+4. If ≥5 APs → POST top 5 BSSID/RSSI over cellular data HTTPS
+5. Else → acquire GPS fix → POST lat/lon over cellular data HTTPS
 6. Deep sleep
 
 ## Configuration
@@ -16,7 +16,7 @@ Edit [`config.py`](config.py) before deployment:
 - `SLEEP_MINUTES` — wake interval (default `60`)
 - `HOME_SSID` — skip transmit when this network is seen
 - `NTFY_URL` — ingest endpoint for POST requests
-- `NBIOT_APN`, `NBIOT_USER`, `NBIOT_PASSWORD` — carrier settings
+- `CELLULAR_DATA_APN`, `CELLULAR_DATA_USER`, `CELLULAR_DATA_PASSWORD` — carrier settings
 
 ## POST payload
 
@@ -54,7 +54,7 @@ Tests cover payload shape, WiFi scan logic, and cycle decision flow with mocks (
 
 ## Hardware notes
 
-- GPS and cellular cannot run simultaneously on SIM7080G; the firmware disables GPS before NB-IoT.
+- GPS and cellular cannot run simultaneously on SIM7080G; the firmware disables GPS before cellular data.
 - Keep PMU BLDO1 enabled while talking to the modem.
 - SIM must be inserted before modem power-on.
 

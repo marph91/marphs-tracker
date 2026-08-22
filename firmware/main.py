@@ -2,10 +2,10 @@
 
 import config
 import machine
+from tracker.cellular_data import CellularDataClient
 from tracker.cycle import run_cycle
 from tracker.gps import GpsReader
 from tracker.modem import AtModem
-from tracker.nbiot import NbiotClient
 from tracker.pmu import PmuController
 from tracker.wifi_scan import scan_wifi
 
@@ -91,7 +91,7 @@ def main():
         "modem": modem,
         "scan_wifi": scan_wifi,
         "gps": GpsReader(pmu, modem, print),
-        "nbiot": NbiotClient(modem, config, print),
+        "cellular_data": CellularDataClient(modem, config, print),
         "log": print,
         "sleep": lambda minutes: sleep(int(minutes) * 60 * 1000, pmu, modem, print),
     }
