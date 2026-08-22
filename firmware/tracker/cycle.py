@@ -60,11 +60,11 @@ def run_cycle(config, hw_functions):
 
     payload = None
     outcome = None
-    battery_level = hw_functions["pmu"].get_battery_level()
+    battery_percent = hw_functions["pmu"].get_battery_percent()
 
     if len(results) >= config.WIFI_MIN_APS:
         access_points = top_aps(results, config.WIFI_TOP_N)
-        payload = build_wifi_payload(access_points, battery_level)
+        payload = build_wifi_payload(access_points, battery_percent)
         outcome = CycleState.WIFI_SENT
         log(f"using wifi path with {len(access_points)} APs")
     else:
@@ -83,10 +83,10 @@ def run_cycle(config, hw_functions):
             log("GPS fix timeout")
             return CycleState.NO_FIX
 
-        payload = build_gps_payload(fix["lat"], fix["lon"], battery_level)
+        payload = build_gps_payload(fix["lat"], fix["lon"], battery_percent)
         outcome = CycleState.GPS_SENT
         log(f"GPS fix acquired: {fix['lat']}, {fix['lon']}")
-    log(f"{battery_level=}")
+    log(f"{battery_percent=}")
 
     try:
         hw_functions["nbiot"].connect()
