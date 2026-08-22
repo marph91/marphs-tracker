@@ -20,16 +20,10 @@ class NbiotClient:
         self.log = log
 
     def _send_http_chunk(self, conn_id, data):
-        self.log("chunk:", data)
-        response = self.modem.send_at(f"AT+CASEND={conn_id},{len(data)}", wait=2)
-        self.log(response)
-        if ">" not in response and "OK" not in response and "DOWNLOAD" not in response:
-            return False
-        self.modem.uart.write(data)
-        time.sleep(2)
-        response = self.modem.send_at("", wait=1)
-        self.log(response)
-        return True
+        # TODO: https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/issues/96#issuecomment-2586446251
+        # self.log("chunk:", data)
+        self.modem.send_at(f"AT+CASEND={conn_id},{len(data)}", wait=5, await_string=">")
+        self.modem.send_at(data, wait=5, await_string="OK")
 
     def _parse_url(self, url):
         secure = url.startswith("https://")
@@ -47,72 +41,49 @@ class NbiotClient:
     def connect(self):
         apn = self.config.NBIOT_APN
 
-        response = self.modem.send_at("AT+CFUN=0", wait=3)
-        self.log(response)
-        if "OK" not in response:
-            raise NbiotError("failed to disable RF")
+        # Disable RF
+        self.modem.send_at("AT+CFUN=0", wait=3, await_string="OK")
 
-        response = self.modem.send_at("AT+CNMP=2", wait=2)  # automatic
-        self.log(response)
-        response = self.modem.send_at("AT+CMNB=3", wait=2)  # CAT-M and NB-IoT
-        self.log(response)
+        # Preferred Mode:
+        # 2 Automatic
+        # 13 GSM only
+        # 38 LTE only
+        # 51 GSM and LTE only
+        self.modem.send_at("AT+CNMP=2", wait=2, await_string="OK")
+        # Preferred Selection between CAT-M and NB-IoT:
+        # 1 CAT-M
+        # 2 NB-Iot
+        # 3 CAT-M and NB-IoT
+        self.modem.send_at("AT+CMNB=1", wait=2, await_string="OK")
 
-        if self.config.NBIOT_BANDS:
-            response = self.modem.send_at(
-                f'AT+CBANDCFG="NB-IoT",{self.config.NBIOT_BANDS}', wait=2
-            )
-            self.log(response)
-
-        if self.config.NBIOT_OPERATOR:
-            response = self.modem.send_at(
-                f'AT+COPS=0,0,"{self.config.NBIOT_OPERATOR}",9',
-                wait=3,
-            )
-            self.log(response)
-
-        response = self.modem.send_at(f'AT+CGDCONT=1,"IP","{apn}"', wait=2)
-        self.log(response)
-        if "OK" not in response:
-            raise NbiotError("failed to set CGDCONT APN")
-
-        response = self.modem.send_at(f'AT+CNCFG=0,1,"{apn}"', wait=2)
-        self.log(response)
-        if "OK" not in response:
-            raise NbiotError("failed to set CNCFG APN")
+        self.modem.send_at(f'AT+CGDCONT=1,"IP","{apn}"', wait=2, await_string="OK")
+        self.modem.send_at(f'AT+CNCFG=0,1,"{apn}"', await_string="OK")
 
         if self.config.NBIOT_USER:
-            response = self.modem.send_at(
-                'AT+CNCFG=0,3,"{}","{}"'.format(
-                    self.config.NBIOT_USER,
-                    self.config.NBIOT_PASSWORD or "",
-                ),
-                wait=2,
+            self.modem.send_at(
+                f'AT+CNCFG=0,3,"{self.config.NBIOT_USER}","{self.config.NBIOT_PASSWORD}"',
+                await_string="OK",
             )
-            self.log(response)
-            if "OK" not in response:
-                raise NbiotError("failed to set NB-IoT credentials")
 
-        response = self.modem.send_at("AT+CFUN=1", wait=3)
-        self.log(response)
-        if "OK" not in response:
-            raise NbiotError("failed to enable RF")
+        # enable RF
+        self.modem.send_at("AT+CFUN=1", wait=3, await_string="OK")
 
-        deadline = time.ticks_add(time.ticks_ms(), 180000)
+        deadline = time.ticks_add(time.ticks_ms(), 60000)
         while time.ticks_diff(deadline, time.ticks_ms()) > 0:
-            response = self.modem.send_at("AT+CEREG?", wait=2)
-            self.log(response)
-            match = re.search(r"\+CEREG:\s*\d+,(\d+)", response)
-            if match and int(match.group(1)) in (1, 5):
+            response = self.modem.send_at("AT+CEREG?", await_string="OK")
+            # <n> = 1 Enable network registration unsolicited result code
+            # <stat>
+            # 1 Registered, home network
+            # 5 Registered, roaming
+            if "CEREG: 0,1" in response or "CEREG: 0,5" in response:
                 break
-            time.sleep(3)
         else:
+            self.log(response)
             raise NbiotError("network registration timed out")
         self.log("NB IOT: network registration successful")
 
-        response = self.modem.send_at("AT+CNACT=0,1", wait=5)
-        self.log(response)
-        if "OK" not in response:
-            raise NbiotError("failed to activate network bearer")
+        # activate network bearer
+        self.modem.send_at("AT+CNACT=0,1", wait=5, await_string="OK")
 
         self._connected = True
         return True
@@ -125,28 +96,23 @@ class NbiotClient:
         body = obfuscate_payload(serialize_payload(payload))
         conn_id = 0
 
-        response = self.modem.send_at(f"AT+CACLOSE={conn_id}", wait=2)
-        self.log(response)
-        response = self.modem.send_at(f"AT+CACID={conn_id}", wait=1)
-        self.log(response)
+        # allowed to fail if there is no connection with ID 0
+        self.modem.send_at(f"AT+CACLOSE={conn_id}", await_string=["OK", "ERROR"])
+        self.modem.send_at(f"AT+CACID={conn_id}", await_string="OK")
 
         if secure:
-            response = self.modem.send_at('AT+CSSLCFG="sslversion",0,3', wait=1)
-            self.log(response)
-            response = self.modem.send_at(f"AT+CASSLCFG={conn_id},SSL,1", wait=1)
-            self.log(response)
-            response = self.modem.send_at('AT+CSSLCFG="ctxindex",0', wait=1)
-            self.log(response)
-            response = self.modem.send_at(f'AT+CSSLCFG="sni",0,"{host}"', wait=2)
-            self.log(response)
+            self.modem.send_at('AT+CSSLCFG="sslversion",0,3', await_string="OK")
+            self.modem.send_at(f"AT+CASSLCFG={conn_id},SSL,1", await_string="OK")
+            self.modem.send_at('AT+CSSLCFG="ctxindex",0', await_string="OK")
+            self.modem.send_at(f'AT+CSSLCFG="sni",0,"{host}"', await_string="OK")
+            self.log("ssl configured")
 
-        response = self.modem.send_at(
+        self.modem.send_at(
             f'AT+CAOPEN={conn_id},0,"TCP","{host}",{port}',
-            wait=8,
+            wait=20,
+            await_string="OK",
         )
-        self.log(response)
-        if "OK" not in response and "+CAOPEN" not in response:
-            raise NbiotError("failed to open HTTPS connection")
+        self.log("tcp connection opened")
 
         header_data = (
             f"POST {path} HTTP/1.1\r\n"
@@ -156,44 +122,32 @@ class NbiotClient:
             "Connection: close\r\n"
             "\r\n"
         )
-
-        if not self._send_http_chunk(conn_id, header_data):
-            raise NbiotError("failed to send HTTP headers")
-        # TODO: https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/issues/96#issuecomment-2586446251
-
-        if not self._send_http_chunk(conn_id, body):
-            raise NbiotError("failed to send HTTP body")
+        self._send_http_chunk(conn_id, header_data)
+        self.log("http header sent")
+        self._send_http_chunk(conn_id, body)
+        self.log("http body sent")
 
         deadline = time.ticks_add(time.ticks_ms(), 60000)
-        received = 0
+        received_bytes = 0
         while time.ticks_diff(deadline, time.ticks_ms()) > 0:
-            response = self.modem.send_at("AT+CARECV?", wait=2)
-            self.log(response)
+            response = self.modem.send_at("AT+CARECV?", await_string="OK")
             match = re.search(r"\+CARECV:\s*\d+,(\d+)", response)
             if match:
-                received = int(match.group(1))
-                if received > 0:
+                received_bytes = int(match.group(1))
+                if received_bytes > 0:
                     break
-            time.sleep(2)
 
-        if received <= 0:
+        if received_bytes <= 0:
+            self.log(response)
             raise NbiotError("no HTTP response received")
 
-        response_carecv = self.modem.send_at(f"AT+CARECV={conn_id},{received}", wait=5)
-        self.log(response_carecv)
-        response = self.modem.send_at(f"AT+CACLOSE={conn_id}", wait=2)
-        self.log(response)
-
-        if (
-            " 200 " not in response_carecv
-            and " 201 " not in response_carecv
-            and " 204 " not in response_carecv
-        ):
-            raise NbiotError(f"HTTP POST failed: {response_carecv[:200]}")
-
-        return response_carecv
+        self.modem.send_at(
+            f"AT+CARECV={conn_id},{received_bytes}",
+            wait=5,
+            await_string="HTTP/1.1 200 OK",
+        )
+        self.modem.send_at(f"AT+CACLOSE={conn_id}", await_string="OK")
 
     def disconnect(self):
-        response = self.modem.send_at("AT+CNACT=0,0", wait=3)
-        self.log(response)
+        self.modem.send_at("AT+CNACT=0,0", wait=3, await_string="OK")
         self._connected = False

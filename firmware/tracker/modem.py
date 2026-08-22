@@ -6,6 +6,10 @@ import utilities
 from machine import UART, Pin
 
 
+class ModemError(Exception):
+    pass
+
+
 class AtModem:
     """UART AT interface for the SIM7080G modem."""
 
@@ -21,26 +25,31 @@ class AtModem:
         self._dtr.value(0)
         self._started = False
 
-    def send_at(self, command, wait=1):
+    def send_at(self, command, wait=1, await_string=""):
         if command:
             self.uart.write(command + "\r\n")
+
+        if await_string:
+            if isinstance(await_string, str):
+                await_string = [await_string]
+            response = ""
+            deadline = time.ticks_add(time.ticks_ms(), wait * 1000)
+            while time.ticks_diff(deadline, time.ticks_ms()) > 0:
+                partial_response = self.uart.read()
+                if partial_response:
+                    response += partial_response.decode("utf-8", "ignore")
+                    if any(string in response for string in await_string):
+                        return response
+                time.sleep(0.1)
+            raise ModemError(
+                f"await_string timeout, {command=}, {response=}, {await_string=}"
+            )
+
         time.sleep(wait)
         response = self.uart.read()
         if not response:
             return ""
-        if isinstance(response, bytes):
-            try:
-                return response.decode("utf-8", "ignore").strip()
-            except Exception:  # noqa: BLE001  # want to catch all exceptions
-                return ""
-        return str(response).strip()
-
-    def wait_for_ok(self, retries=10, delay_s=1):
-        for _ in range(retries):
-            response = self.send_at("AT", wait=delay_s)
-            if "OK" in response:
-                return True
-        return False
+        return response.decode("utf-8", "ignore")
 
     def power_on(self):
         if self._started:
@@ -48,7 +57,7 @@ class AtModem:
 
         retry = 0
         while retry <= 10:
-            if self.wait_for_ok(retries=1, delay_s=1):
+            if self.send_at("AT"):
                 self._started = True
                 return True
             print(".", end="")
@@ -64,14 +73,12 @@ class AtModem:
 
         return False
 
-    def check_sim(self, timeout_s=30):
-        deadline = time.ticks_add(time.ticks_ms(), timeout_s * 1000)
-        while time.ticks_diff(deadline, time.ticks_ms()) > 0:
-            response = self.send_at("AT+CPIN?", wait=2)
-            if "READY" in response:
-                return True
-            time.sleep(3)
-        return False
+    def check_sim(self):
+        try:
+            self.send_at("AT+CPIN?", wait=30, await_string="CPIN: READY")
+            return True
+        except ModemError:
+            return False
 
     def power_off(self):
         self.send_at("AT+CPOWD=1", wait=3)

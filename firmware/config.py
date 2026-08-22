@@ -22,10 +22,8 @@ GPS_FIX_TIMEOUT_S = 120
 
 # NB-IoT provider settings (fill in before use)
 NBIOT_APN = ""
-NBIOT_OPERATOR = ""
 NBIOT_USER = ""
 NBIOT_PASSWORD = ""
-NBIOT_BANDS = ""
 
 # Traccar settings
 TRACCAR_URL = "http://home.lab:5055"
