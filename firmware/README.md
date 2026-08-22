@@ -16,7 +16,7 @@ Edit [`config.py`](config.py) before deployment:
 - `SLEEP_MINUTES` — wake interval (default `60`)
 - `HOME_SSID` — skip transmit when this network is seen
 - `NTFY_URL` — ingest endpoint for POST requests
-- `NBIOT_APN`, `NBIOT_OPERATOR`, `NBIOT_USER`, `NBIOT_PASSWORD`, `NBIOT_BANDS` — carrier settings (placeholders by default)
+- `NBIOT_APN`, `NBIOT_USER`, `NBIOT_PASSWORD` — carrier settings
 
 ## POST payload
 

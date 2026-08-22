@@ -31,7 +31,7 @@ def hw_functions():
         "scan_wifi": Mock(return_value=_sample_results()),
         "gps": gps,
         "nbiot": Mock(),
-        "sleep_minutes": Mock(),
+        "sleep": Mock(),
         "log": Mock(),
     }
 

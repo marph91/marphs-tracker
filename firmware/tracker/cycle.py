@@ -26,17 +26,13 @@ def run_cycle(config, hw_functions):
     Pass them here to allow native tests with mocks.
     hw_functions must provide:
         pmu, modem,
-        scan_wifi, gps, nbiot, sleep_minutes, log
+        scan_wifi, gps, nbiot, sleep, log
     """
     log = hw_functions.get("log", print)
 
-    def _finish():
-        hw_functions["pmu"].power_down_for_sleep()
-        hw_functions["sleep_minutes"](config.SLEEP_MINUTES)
-
     if not hw_functions["pmu"].begin():
         log("PMU init failed")
-        hw_functions["sleep_minutes"](config.SLEEP_MINUTES)
+        hw_functions["sleep"](config.SLEEP_MINUTES)
         return CycleState.PMU_INIT_FAILED
 
     # WiFi scan runs before modem power-on so home detection avoids NB-IoT.
@@ -45,17 +41,17 @@ def run_cycle(config, hw_functions):
 
     if home_ssid_present(results, config.HOME_SSID):
         log("home SSID detected, skipping transmit")
-        _finish()
+        hw_functions["sleep"](config.SLEEP_MINUTES)
         return CycleState.HOME
 
     if not hw_functions["modem"].power_on():
         log("modem power on failed")
-        _finish()
+        hw_functions["sleep"](config.SLEEP_MINUTES)
         return CycleState.MODEM_POWER_ON_FAILED
 
     if not hw_functions["modem"].check_sim():
         log("SIM not ready")
-        _finish()
+        hw_functions["sleep"](config.SLEEP_MINUTES)
         return CycleState.SIM_NOT_READY
 
     payload = None
@@ -98,5 +94,5 @@ def run_cycle(config, hw_functions):
         hw_functions["nbiot"].disconnect()
 
     log(f"cycle outcome: {outcome}")
-    _finish()
+    hw_functions["sleep"](config.SLEEP_MINUTES)
     return outcome

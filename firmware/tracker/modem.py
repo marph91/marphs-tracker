@@ -81,5 +81,10 @@ class AtModem:
             return False
 
     def power_off(self):
-        self.send_at("AT+CPOWD=1", wait=3)
+        print("Turning off modem network LED...")
+        self.send_at("AT+CNETLIGHT=0", await_string="OK")
+
+        print("Powering off SIM7080G...")
+        self.send_at("AT+CPOWD=1", wait=2, await_string="NORMAL POWER DOWN")
+
         self._started = False
