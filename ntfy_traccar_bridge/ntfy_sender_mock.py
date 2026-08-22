@@ -22,6 +22,7 @@ def main():
                     "wifiAccessPoints": [
                         {"macAddress": "00:00:08:EE:7A:A5", "signalStrength": -50}
                     ],
+                    "battery_level": 55,
                 }
             )
             obfuscated = base64.b64encode(data.encode()).decode()
@@ -35,6 +36,7 @@ def main():
                     "type": "gps",
                     "lat": random.random() * 180.0 - 90.0,
                     "lon": random.random() * 360.0 - 180.0,
+                    "battery_level": 44,
                 }
             )
             # encrypted = xxtea.encrypt_hex(data.encode("utf-8"), key)

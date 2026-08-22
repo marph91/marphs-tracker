@@ -10,18 +10,20 @@ except ImportError:
     import json
 
 
-def build_wifi_payload(access_points):
+def build_wifi_payload(access_points, battery_level):
     """Return wifi payload dict with top access points."""
     return {
         "type": "wifi",
+        "battery_level": battery_level,
         "wifiAccessPoints": list(access_points),
     }
 
 
-def build_gps_payload(lat, lon):
+def build_gps_payload(lat, lon, battery_level):
     """Return gps payload dict with coordinates."""
     return {
         "type": "gps",
+        "battery_level": battery_level,
         "lat": lat,
         "lon": lon,
     }

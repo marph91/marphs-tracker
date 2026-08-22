@@ -57,3 +57,9 @@ class PmuController:
         """Disable modem and GPS rails before ESP deep sleep."""
         self.disable_modem()
         self.disable_gps_antenna()
+
+    def get_battery_percent(self):
+        return self._pmu.getBatteryPercent()
+
+    def get_battery_voltage(self):
+        return self._pmu.getBattVoltage()

@@ -1,4 +1,5 @@
 import base64
+import datetime as dt
 import json
 import pathlib
 import sys
@@ -45,7 +46,12 @@ class MessageConverter:
                     print("Unknown format")
                     return
 
-            self.convert_to_traccar_format(lat, lon, int(message_json["time"]) * 1000)
+            self.send_to_traccar(
+                int(message_json["time"]),
+                lat,
+                lon,
+                message_deobfuscated["battery_level"],
+            )
         except Exception as exc:  # want to catch all exceptions
             print(exc)
             raise
@@ -68,10 +74,20 @@ class MessageConverter:
             return None
         return response.json().get("location")
 
-    def convert_to_traccar_format(self, lat, lon, timestamp):
+    def send_to_traccar(self, timestamp_s, lat, lon, battery_level):
+        # save locations to log file
+        date = dt.datetime.fromtimestamp(timestamp_s, tz=dt.UTC)
+        log_file = pathlib.Path(__file__).parent / f"log/{date.year}.csv"
+        log_file.parent.mkdir(exist_ok=True)
+        with log_file.open("a") as f:
+            f.write(
+                f"{date.replace(microsecond=0).isoformat()},{lat},{lon},{battery_level}\n"
+            )
+
         # Actually, it's OsmAnd format: https://www.traccar.org/osmand/
+        timestamp = timestamp_s * 1000
         response = requests.get(
-            f"{firmware_config.TRACCAR_URL}?id={firmware_config.DEVIE_ID}&{lat=}&{lon=}&{timestamp=}"
+            f"{firmware_config.TRACCAR_URL}?id={firmware_config.DEVICE_ID}&{timestamp=}&{lat=}&{lon=}&batt={battery_level}"
         )
         response.raise_for_status()
 
