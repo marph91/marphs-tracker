@@ -32,7 +32,7 @@ def run_cycle(config, hw_functions):
 
     if not hw_functions["pmu"].begin():
         log("PMU init failed")
-        hw_functions["sleep"](config.SLEEP_MINUTES)
+        hw_functions["sleep"](config.SLEEP_MINUTES_HOME)
         return CycleState.PMU_INIT_FAILED
 
     # WiFi scan runs before modem power-on so home detection avoids cellular data.
@@ -41,17 +41,17 @@ def run_cycle(config, hw_functions):
 
     if home_ssid_present(results, config.HOME_SSID):
         log("home SSID detected, skipping transmit")
-        hw_functions["sleep"](config.SLEEP_MINUTES)
+        hw_functions["sleep"](config.SLEEP_MINUTES_HOME)
         return CycleState.HOME
 
     if not hw_functions["modem"].power_on():
         log("modem power on failed")
-        hw_functions["sleep"](config.SLEEP_MINUTES)
+        hw_functions["sleep"](config.SLEEP_MINUTES_AWAY)
         return CycleState.MODEM_POWER_ON_FAILED
 
     if not hw_functions["modem"].check_sim():
         log("SIM not ready")
-        hw_functions["sleep"](config.SLEEP_MINUTES)
+        hw_functions["sleep"](config.SLEEP_MINUTES_AWAY)
         return CycleState.SIM_NOT_READY
 
     payload = None
@@ -93,6 +93,5 @@ def run_cycle(config, hw_functions):
     finally:
         hw_functions["cellular_data"].disconnect()
 
-    log(f"cycle outcome: {outcome}")
-    hw_functions["sleep"](config.SLEEP_MINUTES)
+    hw_functions["sleep"](config.SLEEP_MINUTES_AWAY)
     return outcome

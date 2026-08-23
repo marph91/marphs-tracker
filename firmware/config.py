@@ -1,11 +1,11 @@
-# Central tracker configuration - used by the device and other scripts.
+# Configuration of the location tracker - used by the firmware and local scripts.
 
 # Time between tracking attempts. Affects power consumption and data usage.
-SLEEP_MINUTES = 60
+SLEEP_MINUTES_HOME = 60  # sleep for a longer time when home
+SLEEP_MINUTES_AWAY = 10  # track more often when away
 
-# SSID of your home Wi-Fi.
-#
-# If this SSID is detected during the Wi-Fi scan,
+# SSID of your home Wi-Fis.
+# If any of these SSIDs are detected during the Wi-Fi scan,
 # the tracker assumes that it is at home and does not
 # transmit any tracking data.
 HOME_SSID = "YourHomeWifiSSID"
@@ -20,12 +20,12 @@ ENCRYPTION_KEY = b"secret_key"
 WIFI_MIN_APS = 5
 # Maximum number of Wi-Fi APs included in the payload. Affects data usage.
 WIFI_TOP_N = 5
-GPS_FIX_TIMEOUT_S = 120
+GPS_FIX_TIMEOUT_S = 60
 
-# NB-IoT provider settings (fill in before use)
-NBIOT_APN = ""
-NBIOT_USER = ""
-NBIOT_PASSWORD = ""
+# Cellular data provider settings (fill in before use)
+CELLULAR_DATA_APN = ""
+CELLULAR_DATA_USER = ""
+CELLULAR_DATA_PASSWORD = ""
 
 # Traccar settings
 TRACCAR_URL = "http://home.lab:5055"
