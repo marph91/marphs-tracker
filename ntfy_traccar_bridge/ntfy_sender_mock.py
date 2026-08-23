@@ -1,4 +1,5 @@
-import base64
+"""Sends requests with the correct layout, but random data to the NTFY server. Mocks the location tracker device"""
+
 import json
 import pathlib
 import random
@@ -10,6 +11,11 @@ import requests
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "firmware"))
 
 import config as firmware_config
+
+
+def xor_crypt(data, key):
+    """Apply simple xor."""
+    return bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
 
 
 def main():
@@ -25,7 +31,9 @@ def main():
                     "battery_level": 55,
                 }
             )
-            obfuscated = base64.b64encode(data.encode()).decode()
+            obfuscated = xor_crypt(
+                data.encode("utf-8"), firmware_config.ENCRYPTION_KEY
+            ).hex()
             response = requests.post(firmware_config.NTFY_URL, data=obfuscated)
             response.raise_for_status()
             time.sleep(10)
@@ -40,7 +48,9 @@ def main():
                 }
             )
             # encrypted = xxtea.encrypt_hex(data.encode("utf-8"), key)
-            obfuscated = base64.b64encode(data.encode()).decode()
+            obfuscated = xor_crypt(
+                data.encode("utf-8"), firmware_config.ENCRYPTION_KEY
+            ).hex()
             response = requests.post(firmware_config.NTFY_URL, data=obfuscated)
             response.raise_for_status()
             time.sleep(10)

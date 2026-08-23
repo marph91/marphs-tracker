@@ -1,3 +1,5 @@
+"""Sends a sample request with WIFI data to beaconDB."""
+
 import sys
 
 import requests

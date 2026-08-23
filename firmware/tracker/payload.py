@@ -1,12 +1,12 @@
 """Build unified JSON payloads for HTTPS POST."""
 
+import config
+
 try:
     # micropython
-    import ubinascii as binascii
     import ujson as json
 except ImportError:
     # python
-    import binascii
     import json
 
 
@@ -34,5 +34,11 @@ def serialize_payload(payload):
     return json.dumps(payload, separators=(",", ":"))
 
 
+def xor_crypt(data, key):
+    """Apply simple xor."""
+    return bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
+
+
 def obfuscate_payload(payload):
-    return binascii.b2a_base64(payload.encode()).decode().strip()
+    """Apply simple xor."""
+    return xor_crypt(payload.encode("utf-8"), config.ENCRYPTION_KEY).hex()

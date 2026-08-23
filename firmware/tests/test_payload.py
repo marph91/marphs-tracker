@@ -1,11 +1,12 @@
-import base64
 import json
 
+import config
 from tracker.payload import (
     build_gps_payload,
     build_wifi_payload,
     obfuscate_payload,
     serialize_payload,
+    xor_crypt,
 )
 
 
@@ -44,4 +45,7 @@ def test_serialize_payload_roundtrip():
 
 def test_obfuscate_payload():
     data = "test string"
-    assert base64.b64encode(data.encode()).decode() == obfuscate_payload(data)
+    obfuscated_data = obfuscate_payload(data)
+    assert data == xor_crypt(
+        bytes.fromhex(obfuscated_data), config.ENCRYPTION_KEY
+    ).decode("utf-8")

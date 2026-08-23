@@ -1,4 +1,5 @@
-import base64
+"""Polls NTFY notifications from the NTFY server (in the web) and forwards them to the Traccar server (in the local network)."""
+
 import datetime as dt
 import json
 import pathlib
@@ -9,6 +10,11 @@ import requests
 sys.path.insert(0, str(pathlib.Path(__file__).parent.parent / "firmware"))
 
 import config as firmware_config
+
+
+def xor_crypt(data, key):
+    """Apply simple xor."""
+    return bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
 
 
 class MessageConverter:
@@ -24,7 +30,10 @@ class MessageConverter:
             if message_json["event"] != "message":
                 return
             message_deobfuscated = json.loads(
-                base64.b64decode(message_json["message"]).decode()
+                xor_crypt(
+                    bytes.fromhex(message_json["message"]),
+                    firmware_config.ENCRYPTION_KEY,
+                ).decode("utf-8")
             )
 
             match message_deobfuscated["type"]:

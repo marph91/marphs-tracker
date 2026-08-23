@@ -12,6 +12,8 @@ HOME_SSID = "YourHomeWifiSSID"
 
 # HTTP endpoint receiving the payload from the device.
 NTFY_URL = "https://publix.ntfy/topic/json"
+# encryption parameters for the data
+ENCRYPTION_KEY = b"secret_key"
 
 # If fewer than this number of Wi-Fi access points
 # are detected, GNSS is used instead.
