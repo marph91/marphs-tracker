@@ -1,9 +1,11 @@
 """Boot entry: run one tracker cycle then deep sleep."""
 
+import time
+
 import config
 import machine
 from tracker.cellular_data import CellularDataClient
-from tracker.cycle import run_cycle
+from tracker.cycle import CycleState, run_cycle
 from tracker.gps import GpsReader
 from tracker.modem import AtModem
 from tracker.pmu import PmuController
@@ -93,11 +95,21 @@ def main():
         "gps": GpsReader(pmu, modem, print),
         "cellular_data": CellularDataClient(modem, config, print),
         "log": print,
-        "sleep": lambda minutes: sleep(int(minutes) * 60 * 1000, pmu, modem, print),
     }
 
+    start_time_ms = time.ticks_ms()
     cycle_state = run_cycle(config, hw_functions)
+    elapsed_time_ms = time.ticks_diff(time.ticks_ms(), start_time_ms)
     print(f"{cycle_state=}")
+    print(f"Cycle time: {elapsed_time_ms / 1000} s")
+
+    # sleep some time depending on the state
+    sleep_minutes = (
+        config.SLEEP_MINUTES_HOME
+        if cycle_state == CycleState.HOME
+        else config.SLEEP_MINUTES_AWAY
+    )
+    sleep(int(sleep_minutes) * 60 * 1000, pmu, modem, print)
 
 
 if __name__ == "__main__":
