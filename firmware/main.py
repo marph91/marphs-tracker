@@ -96,7 +96,8 @@ def main():
         "sleep": lambda minutes: sleep(int(minutes) * 60 * 1000, pmu, modem, print),
     }
 
-    run_cycle(config, hw_functions)
+    cycle_state = run_cycle(config, hw_functions)
+    print(f"{cycle_state=}")
 
 
 if __name__ == "__main__":
