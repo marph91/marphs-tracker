@@ -15,7 +15,7 @@ SLEEP_MINUTES_AWAY = const(10)  # track more often when away
 # If any of these SSIDs are detected during the Wi-Fi scan,
 # the tracker assumes that it is at home and does not
 # transmit any tracking data.
-HOME_SSID = const("YourHomeWifiSSID")
+HOME_SSIDS = const(("YourHomeWifiSSID", "SecondHomeSSID"))
 
 # HTTP endpoint receiving the payload from the device.
 NTFY_URL = const("https://publix.ntfy/topic/json")

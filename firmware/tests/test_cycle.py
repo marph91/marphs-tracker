@@ -38,7 +38,11 @@ def hw_functions():
 
 def test_home_ssid_skips_transmit(hw_functions):
     hw_functions["scan_wifi"].return_value = _sample_results() + [
-        {"ssid": default_config.HOME_SSID, "bssid": "ff:ff:ff:ff:ff:ff", "rssi": -30}
+        {
+            "ssid": default_config.HOME_SSIDS[0],
+            "bssid": "ff:ff:ff:ff:ff:ff",
+            "rssi": -30,
+        }
     ]
     hw_functions["gps"].get_fix.return_value = {"lat": 1.0, "lon": 2.0}
 

@@ -38,12 +38,12 @@ def normalize_scan_results(scan_results):
     return normalized
 
 
-def home_ssid_present(results, home_ssid):
-    """Return True if home_ssid appears in scan results."""
-    if not home_ssid:
+def home_ssid_present(results, home_ssids):
+    """Return True if at least one of the home_ssids appears in scan results."""
+    if not home_ssids:
         return False
     for ap in results:
-        if ap["ssid"] == home_ssid:
+        if ap["ssid"] in home_ssids:
             return True
     return False
 

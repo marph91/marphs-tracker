@@ -39,7 +39,7 @@ def run_cycle(config, hw_functions):
     results = hw_functions["scan_wifi"]()
     log(f"wifi scan found {len(results)} APs")
 
-    if home_ssid_present(results, config.HOME_SSID):
+    if home_ssid_present(results, config.HOME_SSIDS):
         log("home SSID detected, skipping transmit")
         hw_functions["sleep"](config.SLEEP_MINUTES_HOME)
         return CycleState.HOME
