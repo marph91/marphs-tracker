@@ -43,6 +43,16 @@ class CellularDataClient:
         port = 443 if secure else 80
         return secure, host, port, path
 
+    def collect_registration_information(self):
+        response = self.modem.send_at("AT+COPS?", await_all=["OK"])
+        LOG(f"COPS - Operator Selection: {response.splitlines()[2]}")
+        response = self.modem.send_at("AT+CPSI?", await_all=["OK"])
+        LOG(f"CPSI - UE System Information: {response.splitlines()[2]}")
+        response = self.modem.send_at("AT+CSQ", await_all=["OK"])
+        LOG(f"CSQ - Signal Quality Report: {response.splitlines()[2]}")
+        response = self.modem.send_at("AT+CEREG?", await_all=["OK"])
+        LOG(f"CEREG - EPS Network Registration Status: {response.splitlines()[2]}")
+
     def connect(self):
         LOG("connecting")
         apn = self.config.CELLULAR_DATA_APN
@@ -94,8 +104,9 @@ class CellularDataClient:
             if "CEREG: 0,1" in response or "CEREG: 0,5" in response:
                 break
         else:
-            LOG(f"{response}")
+            self.collect_registration_information()
             raise CellularDataError("network registration timed out")
+        self.collect_registration_information()
         LOG("network registration successful")
 
         # activate network bearer
@@ -128,7 +139,7 @@ class CellularDataClient:
         # async - CDNSGIP can arrive before OK
         # DNS resolving is also part of the next CAOPEN command, but the command here
         # allows to measure time.
-        self.modem.send_at(f'AT+CDNSGIP="{host}"', await_all=["CDNSGIP:", "OK"])
+        self.modem.send_at(f'AT+CDNSGIP="{host}"', wait=5, await_all=["CDNSGIP:", "OK"])
         LOG("DNS resolved")
 
         # <result>
@@ -183,7 +194,7 @@ class CellularDataClient:
                 if received_bytes > 0:
                     LOG("CARECV bytes received")
                     break
-            LOG(f"CARECV no bytes received: {response=}")
+            LOG("CARECV no bytes received - trying again")
             # response = self.modem.send_at("AT+CASTATE?")
             # LOG(f"CASTATE {response=}")
 
