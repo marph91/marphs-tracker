@@ -130,11 +130,26 @@ class CellularDataClient:
         self.modem.send_at(f"AT+CACID={conn_id}", await_all=["OK"])
 
         if secure:
+            # <sslversion>
+            # 0 QAPI_NET_SSL_PROTOCOL_UNKNOWN
+            # 1 QAPI_NET_SSL_PROTOCOL_TLS_1_0
+            # 2 QAPI_NET_SSL_PROTOCOL_TLS_1_1
+            # 3 QAPI_NET_SSL_PROTOCOL_TLS_1_2
+            # 4 QAPI_NET_SSL_PROTOCOL_DTLS_1_0
+            # 5 QAPI_NET_SSL_PROTOCOL_DTLS_1_2
             self.modem.send_at('AT+CSSLCFG="sslversion",0,3', await_all=["OK"])
             self.modem.send_at(f"AT+CASSLCFG={conn_id},SSL,1", await_all=["OK"])
             self.modem.send_at('AT+CSSLCFG="ctxindex",0', await_all=["OK"])
             self.modem.send_at(f'AT+CSSLCFG="sni",0,"{host}"', await_all=["OK"])
             LOG("SSL configured")
+
+        # log some SSL parameters
+        # response = self.modem.send_at("AT+CSSLCFG?", await_all=["OK"])
+        # LOG(f"CSSLCFG - SSL Parameters of a Context Identifier: {response}")
+        response = self.modem.send_at("AT+CASSLCFG?", await_all=["OK"])
+        LOG(
+            f"CASSLCFG - SSL Certificate and Timeout Parameters: {response.splitlines()[2]}"
+        )
 
         # async - CDNSGIP can arrive before OK
         # DNS resolving is also part of the next CAOPEN command, but the command here
