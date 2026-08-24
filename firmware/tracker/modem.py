@@ -82,12 +82,16 @@ class AtModem:
         return False
 
     def check_sim(self):
-        try:
-            self.send_at("AT+CPIN?", wait=30, await_all=["CPIN: READY", "OK"])
-            return True
-        except ModemError as exc:
-            LOG(f"{exc}")
-            return False
+        for _ in range(3):
+            try:
+                response = self.send_at(
+                    "AT+CPIN?", wait=5, await_all=["CPIN: READY", "OK"]
+                )
+                return True
+            except ModemError:
+                LOG("SIM not ready. Trying again")
+        LOG(f"CPIN {response=}")
+        return False
 
     def power_off(self):
         LOG("Powering off SIM7080G and modem network LED")
