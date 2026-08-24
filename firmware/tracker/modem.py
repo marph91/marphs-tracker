@@ -28,24 +28,27 @@ class AtModem:
         self._dtr.value(0)
         self._started = False
 
-    def send_at(self, command, wait=1, await_string=""):
+    def send_at(self, command, wait=1, await_any=None, await_all=None):
         if command:
             self.uart.write(command + "\r\n")
 
-        if await_string:
-            if isinstance(await_string, str):
-                await_string = [await_string]
+        if await_any is not None or await_all is not None:
             response = ""
             deadline = time.ticks_add(time.ticks_ms(), wait * 1000)
             while time.ticks_diff(deadline, time.ticks_ms()) > 0:
                 partial_response = self.uart.read()
                 if partial_response:
                     response += partial_response.decode("utf-8", "ignore")
-                    if any(string in response for string in await_string):
+                    if (
+                        await_any
+                        and any(string in response for string in await_any)
+                        or await_all
+                        and all(string in response for string in await_all)
+                    ):
                         return response
                 time.sleep(0.1)
             raise ModemError(
-                f"await_string timeout, {command=}, {response=}, {await_string=}"
+                f"await timeout, {command=}, {response=}, {await_any=}, {await_all=}"
             )
 
         time.sleep(wait)
@@ -80,7 +83,7 @@ class AtModem:
 
     def check_sim(self):
         try:
-            self.send_at("AT+CPIN?", wait=30, await_string="CPIN: READY")
+            self.send_at("AT+CPIN?", wait=30, await_all=["CPIN: READY", "OK"])
             return True
         except ModemError as exc:
             LOG(f"{exc}")

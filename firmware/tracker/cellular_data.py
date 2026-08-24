@@ -25,10 +25,10 @@ class CellularDataClient:
     def _send_http_chunk(self, conn_id, data: bytes):
         # TODO: https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/issues/96#issuecomment-2586446251
         # LOG("chunk:", data)
-        self.modem.send_at(f"AT+CASEND={conn_id},{len(data)}", wait=5, await_string=">")
+        self.modem.send_at(f"AT+CASEND={conn_id},{len(data)}", wait=5, await_all=[">"])
         # raw write - sends bytes and doesn't append additional "\r\n"
         self.modem.uart.write(data)
-        self.modem.send_at("", wait=5, await_string="OK")
+        self.modem.send_at("", wait=5, await_all=["OK"])
 
     def _parse_url(self, url):
         secure = url.startswith("https://")
@@ -48,35 +48,35 @@ class CellularDataClient:
         apn = self.config.CELLULAR_DATA_APN
 
         # Disable RF
-        self.modem.send_at("AT+CFUN=0", wait=3, await_string="OK")
+        self.modem.send_at("AT+CFUN=0", wait=3, await_all=["OK"])
 
         # Preferred Mode:
         # 2 Automatic
         # 13 GSM only
         # 38 LTE only
         # 51 GSM and LTE only
-        self.modem.send_at("AT+CNMP=2", wait=2, await_string="OK")
+        self.modem.send_at("AT+CNMP=2", wait=2, await_all=["OK"])
         # Preferred Selection between CAT-M and NB-IoT:
         # 1 CAT-M
         # 2 NB-Iot
         # 3 CAT-M and NB-IoT
-        self.modem.send_at("AT+CMNB=1", wait=2, await_string="OK")
+        self.modem.send_at("AT+CMNB=1", wait=2, await_all=["OK"])
 
-        self.modem.send_at(f'AT+CGDCONT=1,"IP","{apn}"', wait=2, await_string="OK")
-        self.modem.send_at(f'AT+CNCFG=0,1,"{apn}"', await_string="OK")
+        self.modem.send_at(f'AT+CGDCONT=1,"IP","{apn}"', wait=2, await_all=["OK"])
+        self.modem.send_at(f'AT+CNCFG=0,1,"{apn}"', await_all=["OK"])
 
         if self.config.CELLULAR_DATA_USER:
             self.modem.send_at(
                 f'AT+CNCFG=0,3,"{self.config.CELLULAR_DATA_USER}","{self.config.CELLULAR_DATA_PASSWORD}"',
-                await_string="OK",
+                await_all=["OK"],
             )
 
         # enable RF
-        self.modem.send_at("AT+CFUN=1", wait=3, await_string="OK")
+        self.modem.send_at("AT+CFUN=1", wait=3, await_all=["OK"])
 
         deadline = time.ticks_add(time.ticks_ms(), 60000)
         while time.ticks_diff(deadline, time.ticks_ms()) > 0:
-            response = self.modem.send_at("AT+CEREG?", await_string="OK")
+            response = self.modem.send_at("AT+CEREG?")
             # <n> = 1 Enable network registration unsolicited result code
             # <stat>
             # 0 Not registered, MT is not currently searching an operator to
@@ -99,7 +99,7 @@ class CellularDataClient:
         LOG("network registration successful")
 
         # activate network bearer
-        self.modem.send_at("AT+CNACT=0,1", wait=5, await_string="OK")
+        self.modem.send_at("AT+CNACT=0,1", wait=5, await_all=["OK"])
         LOG("activating bearer successful")
 
         self._connected = True
@@ -115,15 +115,21 @@ class CellularDataClient:
         conn_id = 0
 
         # allowed to fail if there is no connection with ID 0
-        self.modem.send_at(f"AT+CACLOSE={conn_id}", await_string=["OK", "ERROR"])
-        self.modem.send_at(f"AT+CACID={conn_id}", await_string="OK")
+        self.modem.send_at(f"AT+CACLOSE={conn_id}", await_any=["OK", "ERROR"])
+        self.modem.send_at(f"AT+CACID={conn_id}", await_all=["OK"])
 
         if secure:
-            self.modem.send_at('AT+CSSLCFG="sslversion",0,3', await_string="OK")
-            self.modem.send_at(f"AT+CASSLCFG={conn_id},SSL,1", await_string="OK")
-            self.modem.send_at('AT+CSSLCFG="ctxindex",0', await_string="OK")
-            self.modem.send_at(f'AT+CSSLCFG="sni",0,"{host}"', await_string="OK")
+            self.modem.send_at('AT+CSSLCFG="sslversion",0,3', await_all=["OK"])
+            self.modem.send_at(f"AT+CASSLCFG={conn_id},SSL,1", await_all=["OK"])
+            self.modem.send_at('AT+CSSLCFG="ctxindex",0', await_all=["OK"])
+            self.modem.send_at(f'AT+CSSLCFG="sni",0,"{host}"', await_all=["OK"])
             LOG("SSL configured")
+
+        # async - CDNSGIP can arrive before OK
+        # DNS resolving is also part of the next CAOPEN command, but the command here
+        # allows to measure time.
+        self.modem.send_at(f'AT+CDNSGIP="{host}"', await_all=["CDNSGIP:", "OK"])
+        LOG("DNS resolved")
 
         # <result>
         # 0 Success
@@ -146,10 +152,12 @@ class CellularDataClient:
             f'AT+CAOPEN={conn_id},0,"TCP","{host}",{port}',
             wait=30,
             # async - CAOPEN can arrive before OK
-            await_string=f"+CAOPEN: {conn_id},0",
+            await_all=[f"+CAOPEN: {conn_id},", "OK"],
         )
-        # LOG(f"CAOPEN {response=}")
-        LOG("TCP connection opened")
+        if f"+CAOPEN: {conn_id},0" in response:
+            LOG("TCP connection opened")
+        else:
+            raise CellularDataError("CAOPEN failed")
 
         body = obfuscate_payload(serialize_payload(payload)).encode("utf-8")
         header_data = (
@@ -169,14 +177,15 @@ class CellularDataClient:
         received_bytes = 0
         while time.ticks_diff(deadline, time.ticks_ms()) > 0:
             response = self.modem.send_at("AT+CARECV?")
-            LOG(f"CARECV {response=}")
             match = re.search(r"\+CARECV:\s*\d+,(\d+)", response)
             if match:
                 received_bytes = int(match.group(1))
                 if received_bytes > 0:
+                    LOG("CARECV bytes received")
                     break
-            response = self.modem.send_at("AT+CASTATE?")
-            LOG(f"CASTATE {response=}")
+            LOG(f"CARECV no bytes received: {response=}")
+            # response = self.modem.send_at("AT+CASTATE?")
+            # LOG(f"CASTATE {response=}")
 
         if received_bytes <= 0:
             LOG(f"{response=}")
@@ -185,9 +194,9 @@ class CellularDataClient:
         self.modem.send_at(
             f"AT+CARECV={conn_id},{received_bytes}",
             wait=5,
-            await_string="HTTP/1.1 200 OK",
+            await_all=["HTTP/1.1 200", "OK"],
         )
-        self.modem.send_at(f"AT+CACLOSE={conn_id}", await_string="OK")
+        self.modem.send_at(f"AT+CACLOSE={conn_id}", await_all=["OK"])
 
     def disconnect(self):
         # it's ok to fail if the network is deactivated already
