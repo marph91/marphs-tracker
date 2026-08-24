@@ -1,9 +1,14 @@
 """WiFi scan helpers and device scan wrapper."""
 
+import logger
+
 try:
     import network
 except ImportError:
     network = None  # needed for unit testing on native device
+
+
+LOG = logger.Logger(__name__)
 
 
 def _decode_ssid(ssid):
@@ -44,7 +49,7 @@ def home_ssid_present(results, home_ssids):
         return False
     for ap in results:
         if ap["ssid"] in home_ssids:
-            print("[WIFI] home SSID detected")
+            LOG("home SSID detected")
             return True
     return False
 
@@ -73,4 +78,6 @@ def scan_wifi():
         raw = wlan.scan()
     finally:
         wlan.active(False)
-    return normalize_scan_results(raw)
+    scan_results = normalize_scan_results(raw)
+    LOG(f"scan found {len(scan_results)} APs")
+    return scan_results

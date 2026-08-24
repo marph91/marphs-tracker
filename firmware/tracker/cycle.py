@@ -1,7 +1,11 @@
 """Tracker wake cycle orchestration."""
 
+import logger
+
 from tracker.payload import build_gps_payload, build_wifi_payload
 from tracker.wifi_scan import home_ssid_present, top_aps
+
+LOG = logger.Logger(__name__)
 
 
 # TODO: replace with enum when available:
@@ -32,7 +36,6 @@ def run_cycle(config, hw_functions):
 
     # WiFi scan runs before modem power-on so home detection avoids cellular data.
     results = hw_functions["scan_wifi"]()
-    print(f"[WIFI] scan found {len(results)} APs")
 
     if home_ssid_present(results, config.HOME_SSIDS):
         return CycleState.HOME
@@ -49,9 +52,9 @@ def run_cycle(config, hw_functions):
     if len(results) >= config.WIFI_MIN_APS:
         access_points = top_aps(results, config.WIFI_TOP_N)
         payload = build_wifi_payload(access_points, battery_percent)
-        print(f"[MAIN] using wifi path with {len(access_points)} APs")
+        LOG(f"using wifi path with {len(access_points)} APs")
     else:
-        print(f"[MAIN] fewer than {config.WIFI_MIN_APS} APs, using GPS path")
+        LOG(f"fewer than {config.WIFI_MIN_APS} APs, using GPS path")
         if not hw_functions["gps"].enable():
             return CycleState.NO_FIX
 
@@ -65,14 +68,13 @@ def run_cycle(config, hw_functions):
             return CycleState.NO_FIX
 
         payload = build_gps_payload(fix["lat"], fix["lon"], battery_percent)
-        print(f"[GPS] fix acquired: {fix['lat']}, {fix['lon']}")
-    print(f"[MAIN] {battery_percent=}")
+    LOG(f"{battery_percent=}")
 
     try:
         hw_functions["cellular_data"].connect()
         hw_functions["cellular_data"].post_json(config.NTFY_URL, payload)
     except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
-        print(f"[CELLULAR] POST failed: {exc}")
+        LOG(f"{exc}")
         return CycleState.POST_FAILED if payload else CycleState.CONFIG_ERROR
     finally:
         hw_functions["cellular_data"].disconnect()

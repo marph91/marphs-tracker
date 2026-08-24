@@ -3,6 +3,7 @@
 import time
 
 import config
+import logger
 import machine
 from tracker.cellular_data import CellularDataClient
 from tracker.cycle import CycleState, run_cycle
@@ -10,6 +11,8 @@ from tracker.gps import GpsReader
 from tracker.modem import AtModem
 from tracker.pmu import PmuController
 from tracker.wifi_scan import scan_wifi
+
+LOG = logger.Logger(__name__.strip("_"))
 
 
 def sleep(time_ms, pmu, modem):
@@ -20,8 +23,8 @@ def sleep(time_ms, pmu, modem):
     # This is not necessary, since the MicroPico VSCode extension opens always
     # the prompt instead of executing main.py.
     # if pmu.is_usb_connected():
-    #     prevent boot loop to allow debugging
-    #     print("[MAIN] Don't go to sleep, since USB is connected.")
+    #     # prevent boot loop to allow debugging
+    #     LOG("Don't go to sleep, since USB is connected.")
     #     return
 
     modem.power_off()
@@ -83,11 +86,13 @@ def sleep(time_ms, pmu, modem):
     # -------------------------------------------------------------
     # ESP32 deep sleep
     # -------------------------------------------------------------
-    print(f"[MAIN] Going to sleep for {time_ms / 1000} seconds")
+    LOG(f"Going to sleep for {time_ms / 1000} seconds")
     machine.deepsleep(time_ms)
 
 
 def main():
+    LOG("Starting main script")
+
     pmu = PmuController()
     modem = AtModem()
     hw_functions = {
@@ -101,8 +106,8 @@ def main():
     start_time_ms = time.ticks_ms()
     cycle_state = run_cycle(config, hw_functions)
     elapsed_time_ms = time.ticks_diff(time.ticks_ms(), start_time_ms)
-    print(f"[MAIN] {cycle_state=}")
-    print(f"[MAIN] Cycle time: {elapsed_time_ms / 1000} s")
+    LOG(f"{cycle_state=}")
+    LOG(f"Cycle time: {elapsed_time_ms / 1000} s")
 
     # sleep some time depending on the state
     sleep_minutes = (

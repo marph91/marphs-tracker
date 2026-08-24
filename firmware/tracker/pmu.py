@@ -1,8 +1,11 @@
 """AXP2101 PMU helpers for modem and GPS power rails."""
 
+import logger
 import utilities
 import XPowersLib
 from machine import I2C, Pin
+
+LOG = logger.Logger(__name__)
 
 
 class PmuController:
@@ -24,7 +27,7 @@ class PmuController:
             utilities.I2C_SDA,
             utilities.I2C_SCL,
         ):
-            print("[PMU] init failed")
+            LOG("[PMU] init failed")
             return False
 
         self._pmu.setBLDO1Voltage(3000)
@@ -57,7 +60,7 @@ class PmuController:
         self._pmu.disableBLDO(2)
 
     def power_down_for_sleep(self):
-        print("[PMU] Disabling PMU measurements and unused rails")
+        LOG("[PMU] Disabling PMU measurements and unused rails")
 
         # Disable PMU measurements
         self._pmu.disableBattVoltageMeasure()

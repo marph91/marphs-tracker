@@ -3,7 +3,11 @@
 import re
 import time
 
+import logger
+
 from tracker.payload import obfuscate_payload, serialize_payload
+
+LOG = logger.Logger(__name__)
 
 
 class CellularDataError(Exception):
@@ -18,11 +22,13 @@ class CellularDataClient:
         self.config = config
         self._connected = False
 
-    def _send_http_chunk(self, conn_id, data):
+    def _send_http_chunk(self, conn_id, data: bytes):
         # TODO: https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/issues/96#issuecomment-2586446251
-        # print("[CELLULAR] chunk:", data)
+        # LOG("chunk:", data)
         self.modem.send_at(f"AT+CASEND={conn_id},{len(data)}", wait=5, await_string=">")
-        self.modem.send_at(data, wait=5, await_string="OK")
+        # raw write - sends bytes and doesn't append additional "\r\n"
+        self.modem.uart.write(data)
+        self.modem.send_at("", wait=5, await_string="OK")
 
     def _parse_url(self, url):
         secure = url.startswith("https://")
@@ -38,6 +44,7 @@ class CellularDataClient:
         return secure, host, port, path
 
     def connect(self):
+        LOG("connecting")
         apn = self.config.CELLULAR_DATA_APN
 
         # Disable RF
@@ -72,17 +79,28 @@ class CellularDataClient:
             response = self.modem.send_at("AT+CEREG?", await_string="OK")
             # <n> = 1 Enable network registration unsolicited result code
             # <stat>
-            # 1 Registered, home network
+            # 0 Not registered, MT is not currently searching an operator to
+            #   register to.The GPRS service is disabled, the UE is allowed to attach
+            #   for GPRS if requested by the user.
+            # 1 Registered, home network.
+            # 2 Not registered, but MT is currently trying to attach or searching an
+            #   operator to register to. The GPRS service is enabled, but an allowable
+            #   PLMN is currently not available. The UE will start a GPRS attach as
+            #   soon as an allowable PLMN is available.
+            # 3 Registration denied, The GPRS service is disabled, the UE is not
+            #   allowed to attach for GPRS if it is requested by the user.
+            # 4 Unknown
             # 5 Registered, roaming
             if "CEREG: 0,1" in response or "CEREG: 0,5" in response:
                 break
         else:
-            print(f"[CELLULAR] {response}")
+            LOG(f"{response}")
             raise CellularDataError("network registration timed out")
-        print("[CELLULAR] network registration successful")
+        LOG("network registration successful")
 
         # activate network bearer
         self.modem.send_at("AT+CNACT=0,1", wait=5, await_string="OK")
+        LOG("activating bearer successful")
 
         self._connected = True
         return True
@@ -91,8 +109,9 @@ class CellularDataClient:
         if not self._connected:
             self.connect()
 
+        LOG("post json payload")
+
         secure, host, port, path = self._parse_url(url)
-        body = obfuscate_payload(serialize_payload(payload))
         conn_id = 0
 
         # allowed to fail if there is no connection with ID 0
@@ -104,15 +123,35 @@ class CellularDataClient:
             self.modem.send_at(f"AT+CASSLCFG={conn_id},SSL,1", await_string="OK")
             self.modem.send_at('AT+CSSLCFG="ctxindex",0', await_string="OK")
             self.modem.send_at(f'AT+CSSLCFG="sni",0,"{host}"', await_string="OK")
-            print("[CELLULAR] SSL configured")
+            LOG("SSL configured")
 
-        self.modem.send_at(
+        # <result>
+        # 0 Success
+        # 1 Socket error
+        # 2 No memory
+        # 3 Connection limit
+        # 4 Parameter invalid
+        # 6 Invalid IP address
+        # 7 Not support the function
+        # 12 Can’t bind the port
+        # 13 Can’t listen the port
+        # 20 Can’t resolv the host
+        # 21 Network not active
+        # 23 Remote refuse
+        # 24 Certificate’s time expired
+        # 25 Certificate’s common name does not match
+        # 26 Certificate’s common name does not match and time expired
+        # 27 Connect failed
+        response = self.modem.send_at(
             f'AT+CAOPEN={conn_id},0,"TCP","{host}",{port}',
-            wait=20,
-            await_string="OK",
+            wait=30,
+            # async - CAOPEN can arrive before OK
+            await_string=f"+CAOPEN: {conn_id},0",
         )
-        print("[CELLULAR] TCP connection opened")
+        # LOG(f"CAOPEN {response=}")
+        LOG("TCP connection opened")
 
+        body = obfuscate_payload(serialize_payload(payload)).encode("utf-8")
         header_data = (
             f"POST {path} HTTP/1.1\r\n"
             f"Host: {host}\r\n"  # host_header
@@ -120,24 +159,27 @@ class CellularDataClient:
             f"Content-Length: {len(body)}\r\n"
             "Connection: close\r\n"
             "\r\n"
-        )
+        ).encode()
         self._send_http_chunk(conn_id, header_data)
-        print("[CELLULAR] HTTP header sent")
+        LOG("HTTP header sent")
         self._send_http_chunk(conn_id, body)
-        print("[CELLULAR] HTTP body sent")
+        LOG("HTTP body sent")
 
-        deadline = time.ticks_add(time.ticks_ms(), 60000)
+        deadline = time.ticks_add(time.ticks_ms(), 20000)
         received_bytes = 0
         while time.ticks_diff(deadline, time.ticks_ms()) > 0:
-            response = self.modem.send_at("AT+CARECV?", await_string="OK")
+            response = self.modem.send_at("AT+CARECV?")
+            LOG(f"CARECV {response=}")
             match = re.search(r"\+CARECV:\s*\d+,(\d+)", response)
             if match:
                 received_bytes = int(match.group(1))
                 if received_bytes > 0:
                     break
+            response = self.modem.send_at("AT+CASTATE?")
+            LOG(f"CASTATE {response=}")
 
         if received_bytes <= 0:
-            print(f"[CELLULAR] {response}")
+            LOG(f"{response=}")
             raise CellularDataError("no HTTP response received")
 
         self.modem.send_at(

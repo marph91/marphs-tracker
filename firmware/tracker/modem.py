@@ -2,8 +2,11 @@
 
 import time
 
+import logger
 import utilities
 from machine import UART, Pin
+
+LOG = logger.Logger(__name__)
 
 
 class ModemError(Exception):
@@ -55,14 +58,14 @@ class AtModem:
         if self._started:
             return True
 
-        print("[MODEM] Power on")
+        LOG("Power on")
         retry = 0
         while retry <= 10:
             if self.send_at("AT"):
                 self._started = True
                 return True
             retry += 1
-            print(f"[MODEM] {retry=}")
+            LOG(f"{retry=}")
             if retry > 10:
                 self._pwr.value(0)
                 time.sleep(0.1)
@@ -70,9 +73,9 @@ class AtModem:
                 time.sleep(1)
                 self._pwr.value(0)
                 retry = 0
-                print("[MODEM] Retry start")
+                LOG("Retry start")
 
-        print("[MODEM] power on failed")
+        LOG("power on failed")
         return False
 
     def check_sim(self):
@@ -80,11 +83,11 @@ class AtModem:
             self.send_at("AT+CPIN?", wait=30, await_string="CPIN: READY")
             return True
         except ModemError as exc:
-            print(f"[MODEM] {exc}")
+            LOG(f"{exc}")
             return False
 
     def power_off(self):
-        print("[MODEM] Powering off SIM7080G and modem network LED")
+        LOG("Powering off SIM7080G and modem network LED")
         # it's ok to fail if the LED is off already
         self.send_at("AT+CNETLIGHT=0")
         # it's ok to fail if the modem is off already
