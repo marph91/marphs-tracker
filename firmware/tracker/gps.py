@@ -92,7 +92,7 @@ class GpsReader:
 
         return {"lat": lat, "lon": lon}
 
-    def get_fix(self, timeout_s=120, poll_s=2):
+    def get_fix(self, timeout_s=60, poll_s=2):
         start_time_ms = time.ticks_ms()
         deadline_ms = time.ticks_add(start_time_ms, timeout_s * 1000)
         while time.ticks_diff(deadline_ms, time.ticks_ms()) > 0:
@@ -106,4 +106,5 @@ class GpsReader:
                 return fix
             self.log(f"GPS: No fix after {current_time_s} seconds")
             time.sleep(poll_s)
+        self.log("GPS fix timeout")
         return None

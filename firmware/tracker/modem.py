@@ -55,13 +55,14 @@ class AtModem:
         if self._started:
             return True
 
+        print("Power modem")
         retry = 0
         while retry <= 10:
             if self.send_at("AT"):
                 self._started = True
                 return True
-            print(".", end="")
             retry += 1
+            print(f"{retry=}")
             if retry > 10:
                 self._pwr.value(0)
                 time.sleep(0.1)
@@ -69,22 +70,23 @@ class AtModem:
                 time.sleep(1)
                 self._pwr.value(0)
                 retry = 0
-                print("Retry start modem.")
+                print("Retry start modem")
 
+        print("modem power on failed")
         return False
 
     def check_sim(self):
         try:
             self.send_at("AT+CPIN?", wait=30, await_string="CPIN: READY")
             return True
-        except ModemError:
+        except ModemError as exc:
+            print(exc)
             return False
 
     def power_off(self):
-        print("Turning off modem network LED...")
-        self.send_at("AT+CNETLIGHT=0", await_string="OK")
-
-        print("Powering off SIM7080G...")
-        self.send_at("AT+CPOWD=1", wait=2, await_string="NORMAL POWER DOWN")
-
+        print("Powering off SIM7080G and modem network LED")
+        # it's ok to fail if the LED is off already
+        self.send_at("AT+CNETLIGHT=0")
+        # it's ok to fail if the modem is off already
+        self.send_at("AT+CPOWD=1")
         self._started = False

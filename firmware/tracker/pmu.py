@@ -24,6 +24,7 @@ class PmuController:
             utilities.I2C_SDA,
             utilities.I2C_SCL,
         ):
+            print("PMU init failed")
             return False
 
         self._pmu.setBLDO1Voltage(3000)

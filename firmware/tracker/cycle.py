@@ -11,11 +11,10 @@ class CycleState:
     HOME = 1
     MODEM_POWER_ON_FAILED = 2
     SIM_NOT_READY = 3
-    WIFI_SENT = 4
-    GPS_SENT = 5
     NO_FIX = 6
     POST_FAILED = 7
     CONFIG_ERROR = 8
+    FINISHED = 9
 
 
 def run_cycle(config, hw_functions):
@@ -31,7 +30,6 @@ def run_cycle(config, hw_functions):
     log = hw_functions.get("log", print)
 
     if not hw_functions["pmu"].begin():
-        log("PMU init failed")
         return CycleState.PMU_INIT_FAILED
 
     # WiFi scan runs before modem power-on so home detection avoids cellular data.
@@ -39,30 +37,24 @@ def run_cycle(config, hw_functions):
     log(f"wifi scan found {len(results)} APs")
 
     if home_ssid_present(results, config.HOME_SSIDS):
-        log("home SSID detected, skipping transmit")
         return CycleState.HOME
 
     if not hw_functions["modem"].power_on():
-        log("modem power on failed")
         return CycleState.MODEM_POWER_ON_FAILED
 
     if not hw_functions["modem"].check_sim():
-        log("SIM not ready")
         return CycleState.SIM_NOT_READY
 
     payload = None
-    outcome = None
     battery_percent = hw_functions["pmu"].get_battery_percent()
 
     if len(results) >= config.WIFI_MIN_APS:
         access_points = top_aps(results, config.WIFI_TOP_N)
         payload = build_wifi_payload(access_points, battery_percent)
-        outcome = CycleState.WIFI_SENT
         log(f"using wifi path with {len(access_points)} APs")
     else:
         log(f"fewer than {config.WIFI_MIN_APS} APs, using GPS path")
         if not hw_functions["gps"].enable():
-            log("failed to enable GPS")
             return CycleState.NO_FIX
 
         try:
@@ -72,11 +64,9 @@ def run_cycle(config, hw_functions):
             hw_functions["gps"].disable()
 
         if not fix:
-            log("GPS fix timeout")
             return CycleState.NO_FIX
 
         payload = build_gps_payload(fix["lat"], fix["lon"], battery_percent)
-        outcome = CycleState.GPS_SENT
         log(f"GPS fix acquired: {fix['lat']}, {fix['lon']}")
     log(f"{battery_percent=}")
 
@@ -89,4 +79,4 @@ def run_cycle(config, hw_functions):
     finally:
         hw_functions["cellular_data"].disconnect()
 
-    return outcome
+    return CycleState.FINISHED
