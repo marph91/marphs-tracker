@@ -12,15 +12,17 @@ from tracker.pmu import PmuController
 from tracker.wifi_scan import scan_wifi
 
 
-def sleep(time_ms, pmu, modem, log):
+def sleep(time_ms, pmu, modem):
     # based on:
     # - https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G-MicroPython/blob/377b15a71fde63463ef67a450856571dc5516a8a/examples/MinimalModemAndEspSleep/MinimalModemAndEspSleep.py
     # - https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/issues/168
 
-    if pmu.is_usb_connected():
-        # prevent boot loop to allow debugging
-        log("Don't go to sleep, since USB is connected.")
-        return
+    # This is not necessary, since the MicroPico VSCode extension opens always
+    # the prompt instead of executing main.py.
+    # if pmu.is_usb_connected():
+    #     prevent boot loop to allow debugging
+    #     print("Don't go to sleep, since USB is connected.")
+    #     return
 
     modem.power_off()
     pmu.power_down_for_sleep()
@@ -81,7 +83,7 @@ def sleep(time_ms, pmu, modem, log):
     # -------------------------------------------------------------
     # ESP32 deep sleep
     # -------------------------------------------------------------
-    log(f"Going to sleep for {time_ms / 1000} seconds")
+    print(f"Going to sleep for {time_ms / 1000} seconds")
     machine.deepsleep(time_ms)
 
 
@@ -92,9 +94,8 @@ def main():
         "pmu": pmu,
         "modem": modem,
         "scan_wifi": scan_wifi,
-        "gps": GpsReader(pmu, modem, print),
-        "cellular_data": CellularDataClient(modem, config, print),
-        "log": print,
+        "gps": GpsReader(pmu, modem),
+        "cellular_data": CellularDataClient(modem, config),
     }
 
     start_time_ms = time.ticks_ms()
@@ -109,7 +110,7 @@ def main():
         if cycle_state == CycleState.HOME
         else config.SLEEP_MINUTES_AWAY
     )
-    sleep(int(sleep_minutes) * 60 * 1000, pmu, modem, print)
+    sleep(int(sleep_minutes) * 60 * 1000, pmu, modem)
 
 
 if __name__ == "__main__":

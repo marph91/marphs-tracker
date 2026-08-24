@@ -13,15 +13,14 @@ class CellularDataError(Exception):
 class CellularDataClient:
     """Configure cellular data bearer and send HTTPS POST requests."""
 
-    def __init__(self, modem, config, log=print):
+    def __init__(self, modem, config):
         self.modem = modem
         self.config = config
         self._connected = False
-        self.log = log
 
     def _send_http_chunk(self, conn_id, data):
         # TODO: https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/issues/96#issuecomment-2586446251
-        # self.log("chunk:", data)
+        # print("chunk:", data)
         self.modem.send_at(f"AT+CASEND={conn_id},{len(data)}", wait=5, await_string=">")
         self.modem.send_at(data, wait=5, await_string="OK")
 
@@ -78,9 +77,9 @@ class CellularDataClient:
             if "CEREG: 0,1" in response or "CEREG: 0,5" in response:
                 break
         else:
-            self.log(response)
+            print(response)
             raise CellularDataError("network registration timed out")
-        self.log("NB IOT: network registration successful")
+        print("NB IOT: network registration successful")
 
         # activate network bearer
         self.modem.send_at("AT+CNACT=0,1", wait=5, await_string="OK")
@@ -105,14 +104,14 @@ class CellularDataClient:
             self.modem.send_at(f"AT+CASSLCFG={conn_id},SSL,1", await_string="OK")
             self.modem.send_at('AT+CSSLCFG="ctxindex",0', await_string="OK")
             self.modem.send_at(f'AT+CSSLCFG="sni",0,"{host}"', await_string="OK")
-            self.log("ssl configured")
+            print("ssl configured")
 
         self.modem.send_at(
             f'AT+CAOPEN={conn_id},0,"TCP","{host}",{port}',
             wait=20,
             await_string="OK",
         )
-        self.log("tcp connection opened")
+        print("tcp connection opened")
 
         header_data = (
             f"POST {path} HTTP/1.1\r\n"
@@ -123,9 +122,9 @@ class CellularDataClient:
             "\r\n"
         )
         self._send_http_chunk(conn_id, header_data)
-        self.log("http header sent")
+        print("http header sent")
         self._send_http_chunk(conn_id, body)
-        self.log("http body sent")
+        print("http body sent")
 
         deadline = time.ticks_add(time.ticks_ms(), 60000)
         received_bytes = 0
@@ -138,7 +137,7 @@ class CellularDataClient:
                     break
 
         if received_bytes <= 0:
-            self.log(response)
+            print(response)
             raise CellularDataError("no HTTP response received")
 
         self.modem.send_at(

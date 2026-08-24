@@ -6,10 +6,9 @@ import time
 class GpsReader:
     """Read GPS coordinates from modem AT+CGNSINF."""
 
-    def __init__(self, pmu, modem, log=print):
+    def __init__(self, pmu, modem):
         self.pmu = pmu
         self.modem = modem
-        self.log = log
 
     def config(self):
         self.modem.send_at("AT+CGNSPWR=0", wait=2, await_string="OK")
@@ -19,9 +18,9 @@ class GpsReader:
         #  Only one of the four parameters can be set to 1."
         # https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/blob/1f49d041e11c1af5ca7c32bb604f65da8e4394ae/examples/MinimalModemGPSExample/MinimalModemGPSExample.ino#L154
         # response = self.modem.send_at("AT+CGNSMOD?", wait=2)
-        # log(response)
+        # print(response)
         self.modem.send_at("AT+CGNSMOD=1,0,0,1,0", wait=2, await_string="OK")
-        self.log("GPS: Setting systems successful")
+        print("GPS: Setting systems successful")
 
         # self.modem.send_at("AT+SGNSCFG?", wait=2, await_string="OK")
 
@@ -36,7 +35,7 @@ class GpsReader:
         # 1 Use all low power technologies to calculate location.
         # 2 Use only low and medium power technologies to calculate location.
         # self.modem.send_at("AT+SGNSCMD=1,0", wait=2, await_string="OK")
-        # self.log("GPS: Setting command successful")
+        # print("GPS: Setting command successful")
 
         # mode 2:
         # <minInterval>
@@ -52,11 +51,11 @@ class GpsReader:
         # 2 Medium Accuracy for location is acceptable.
         # 3 Only High Accuracy for location is acceptable.
         self.modem.send_at("AT+SGNSCMD=2,1000,0,1", wait=2, await_string="OK")
-        self.log("GPS: Setting command successful")
+        print("GPS: Setting command successful")
 
         # Turn off GNSS
         self.modem.send_at("AT+SGNSCMD=0", wait=2, await_string="OK")
-        self.log("GPS: Configuration finished successful")
+        print("GPS: Configuration finished successful")
 
         self.modem.send_at("AT+CGNSPWR=1", wait=2, await_string="OK")
 
@@ -97,14 +96,14 @@ class GpsReader:
         deadline_ms = time.ticks_add(start_time_ms, timeout_s * 1000)
         while time.ticks_diff(deadline_ms, time.ticks_ms()) > 0:
             response = self.modem.send_at("AT+CGNSINF", await_string="OK")
-            # self.log(response)
+            # print(response)
             current_time_s = time.ticks_diff(time.ticks_ms(), start_time_ms) // 1000
             fix = self._parse_fix(response)
             if fix:
-                self.log(f"GPS: Fix after {current_time_s} seconds")
-                self.log(fix)
+                print(f"GPS: Fix after {current_time_s} seconds")
+                print(fix)
                 return fix
-            self.log(f"GPS: No fix after {current_time_s} seconds")
+            print(f"GPS: No fix after {current_time_s} seconds")
             time.sleep(poll_s)
-        self.log("GPS fix timeout")
+        print("GPS fix timeout")
         return None

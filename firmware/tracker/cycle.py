@@ -27,14 +27,12 @@ def run_cycle(config, hw_functions):
         pmu, modem,
         scan_wifi, gps, cellular_data, sleep, log
     """
-    log = hw_functions.get("log", print)
-
     if not hw_functions["pmu"].begin():
         return CycleState.PMU_INIT_FAILED
 
     # WiFi scan runs before modem power-on so home detection avoids cellular data.
     results = hw_functions["scan_wifi"]()
-    log(f"wifi scan found {len(results)} APs")
+    print(f"wifi scan found {len(results)} APs")
 
     if home_ssid_present(results, config.HOME_SSIDS):
         return CycleState.HOME
@@ -51,9 +49,9 @@ def run_cycle(config, hw_functions):
     if len(results) >= config.WIFI_MIN_APS:
         access_points = top_aps(results, config.WIFI_TOP_N)
         payload = build_wifi_payload(access_points, battery_percent)
-        log(f"using wifi path with {len(access_points)} APs")
+        print(f"using wifi path with {len(access_points)} APs")
     else:
-        log(f"fewer than {config.WIFI_MIN_APS} APs, using GPS path")
+        print(f"fewer than {config.WIFI_MIN_APS} APs, using GPS path")
         if not hw_functions["gps"].enable():
             return CycleState.NO_FIX
 
@@ -67,14 +65,14 @@ def run_cycle(config, hw_functions):
             return CycleState.NO_FIX
 
         payload = build_gps_payload(fix["lat"], fix["lon"], battery_percent)
-        log(f"GPS fix acquired: {fix['lat']}, {fix['lon']}")
-    log(f"{battery_percent=}")
+        print(f"GPS fix acquired: {fix['lat']}, {fix['lon']}")
+    print(f"{battery_percent=}")
 
     try:
         hw_functions["cellular_data"].connect()
         hw_functions["cellular_data"].post_json(config.NTFY_URL, payload)
     except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
-        log(f"cellular data POST failed: {exc}")
+        print(f"cellular data POST failed: {exc}")
         return CycleState.POST_FAILED if payload else CycleState.CONFIG_ERROR
     finally:
         hw_functions["cellular_data"].disconnect()

@@ -35,6 +35,9 @@ def hw_functions():
     }
 
 
+@pytest.mark.skipif(
+    len(default_config.HOME_SSIDS) == 0, reason="at least one home SSID needed"
+)
 def test_home_ssid_skips_transmit(hw_functions):
     hw_functions["scan_wifi"].return_value = _sample_results() + [
         {

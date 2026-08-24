@@ -57,8 +57,9 @@ class PmuController:
         self._pmu.disableBLDO(2)
 
     def power_down_for_sleep(self):
+        print("Disabling PMU measurements and unused rails...")
+
         # Disable PMU measurements
-        print("Disabling PMU measurements...")
         self._pmu.disableBattVoltageMeasure()
         self._pmu.disableTemperatureMeasure()
         self._pmu.disableVbusVoltageMeasure()
@@ -66,7 +67,6 @@ class PmuController:
         self._pmu.disableTSPinMeasure()
 
         # Disable unused PMU power rails
-        print("Disabling unused PMU rails...")
         for i in range(1, 5):
             self._pmu.disableALDO(i)
 
