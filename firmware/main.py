@@ -21,7 +21,7 @@ def sleep(time_ms, pmu, modem):
     # the prompt instead of executing main.py.
     # if pmu.is_usb_connected():
     #     prevent boot loop to allow debugging
-    #     print("Don't go to sleep, since USB is connected.")
+    #     print("[MAIN] Don't go to sleep, since USB is connected.")
     #     return
 
     modem.power_off()
@@ -83,7 +83,7 @@ def sleep(time_ms, pmu, modem):
     # -------------------------------------------------------------
     # ESP32 deep sleep
     # -------------------------------------------------------------
-    print(f"Going to sleep for {time_ms / 1000} seconds")
+    print(f"[MAIN] Going to sleep for {time_ms / 1000} seconds")
     machine.deepsleep(time_ms)
 
 
@@ -101,8 +101,8 @@ def main():
     start_time_ms = time.ticks_ms()
     cycle_state = run_cycle(config, hw_functions)
     elapsed_time_ms = time.ticks_diff(time.ticks_ms(), start_time_ms)
-    print(f"{cycle_state=}")
-    print(f"Cycle time: {elapsed_time_ms / 1000} s")
+    print(f"[MAIN] {cycle_state=}")
+    print(f"[MAIN] Cycle time: {elapsed_time_ms / 1000} s")
 
     # sleep some time depending on the state
     sleep_minutes = (

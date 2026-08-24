@@ -24,7 +24,7 @@ class PmuController:
             utilities.I2C_SDA,
             utilities.I2C_SCL,
         ):
-            print("PMU init failed")
+            print("[PMU] init failed")
             return False
 
         self._pmu.setBLDO1Voltage(3000)
@@ -57,7 +57,7 @@ class PmuController:
         self._pmu.disableBLDO(2)
 
     def power_down_for_sleep(self):
-        print("Disabling PMU measurements and unused rails...")
+        print("[PMU] Disabling PMU measurements and unused rails")
 
         # Disable PMU measurements
         self._pmu.disableBattVoltageMeasure()

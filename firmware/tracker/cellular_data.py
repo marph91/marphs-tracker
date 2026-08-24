@@ -20,7 +20,7 @@ class CellularDataClient:
 
     def _send_http_chunk(self, conn_id, data):
         # TODO: https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/issues/96#issuecomment-2586446251
-        # print("chunk:", data)
+        # print("[CELLULAR] chunk:", data)
         self.modem.send_at(f"AT+CASEND={conn_id},{len(data)}", wait=5, await_string=">")
         self.modem.send_at(data, wait=5, await_string="OK")
 
@@ -77,9 +77,9 @@ class CellularDataClient:
             if "CEREG: 0,1" in response or "CEREG: 0,5" in response:
                 break
         else:
-            print(response)
+            print(f"[CELLULAR] {response}")
             raise CellularDataError("network registration timed out")
-        print("NB IOT: network registration successful")
+        print("[CELLULAR] network registration successful")
 
         # activate network bearer
         self.modem.send_at("AT+CNACT=0,1", wait=5, await_string="OK")
@@ -104,14 +104,14 @@ class CellularDataClient:
             self.modem.send_at(f"AT+CASSLCFG={conn_id},SSL,1", await_string="OK")
             self.modem.send_at('AT+CSSLCFG="ctxindex",0', await_string="OK")
             self.modem.send_at(f'AT+CSSLCFG="sni",0,"{host}"', await_string="OK")
-            print("ssl configured")
+            print("[CELLULAR] SSL configured")
 
         self.modem.send_at(
             f'AT+CAOPEN={conn_id},0,"TCP","{host}",{port}',
             wait=20,
             await_string="OK",
         )
-        print("tcp connection opened")
+        print("[CELLULAR] TCP connection opened")
 
         header_data = (
             f"POST {path} HTTP/1.1\r\n"
@@ -122,9 +122,9 @@ class CellularDataClient:
             "\r\n"
         )
         self._send_http_chunk(conn_id, header_data)
-        print("http header sent")
+        print("[CELLULAR] HTTP header sent")
         self._send_http_chunk(conn_id, body)
-        print("http body sent")
+        print("[CELLULAR] HTTP body sent")
 
         deadline = time.ticks_add(time.ticks_ms(), 60000)
         received_bytes = 0
@@ -137,7 +137,7 @@ class CellularDataClient:
                     break
 
         if received_bytes <= 0:
-            print(response)
+            print(f"[CELLULAR] {response}")
             raise CellularDataError("no HTTP response received")
 
         self.modem.send_at(
@@ -148,5 +148,6 @@ class CellularDataClient:
         self.modem.send_at(f"AT+CACLOSE={conn_id}", await_string="OK")
 
     def disconnect(self):
-        self.modem.send_at("AT+CNACT=0,0", wait=3, await_string="OK")
+        # it's ok to fail if the network is deactivated already
+        self.modem.send_at("AT+CNACT=0,0", wait=3)
         self._connected = False
