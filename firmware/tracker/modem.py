@@ -39,11 +39,17 @@ class AtModem:
                 partial_response = self.uart.read()
                 if partial_response:
                     response += partial_response.decode("utf-8", "ignore")
+                    # only consider complete lines
+                    complete_lines = "".join(
+                        line
+                        for line in response.splitlines(keepends=True)
+                        if line.endswith("\r\n")
+                    )
                     if (
                         await_any
-                        and any(string in response for string in await_any)
+                        and any(string in complete_lines for string in await_any)
                         or await_all
-                        and all(string in response for string in await_all)
+                        and all(string in complete_lines for string in await_all)
                     ):
                         return response
                 time.sleep(0.1)
