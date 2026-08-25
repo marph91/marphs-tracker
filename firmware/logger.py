@@ -8,6 +8,14 @@ except AttributeError:
     START_MS = time.time() * 1000
 
 
+def get_line(text, string):
+    """Get the line containing a string."""
+    for line in text.splitlines():
+        if string in line:
+            return line
+    return ""
+
+
 class Logger:
     def __init__(self, module):
         self.module = module.upper()

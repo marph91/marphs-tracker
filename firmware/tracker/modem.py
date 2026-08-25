@@ -71,6 +71,10 @@ class AtModem:
         retry = 0
         while retry <= 10:
             if self.send_at("AT"):
+                response = self.send_at("AT+CGMR", await_all=["OK"])
+                LOG(
+                    f"CGMR - TA Revision Identification of Software Release: {response.splitlines()[2]}"
+                )
                 self._started = True
                 return True
             retry += 1

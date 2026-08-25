@@ -3,11 +3,12 @@
 import re
 import time
 
-import logger
+from logger import Logger, get_line
 
+from tracker.modem import ModemError
 from tracker.payload import obfuscate_payload, serialize_payload
 
-LOG = logger.Logger(__name__)
+LOG = Logger(__name__)
 
 
 class CellularDataError(Exception):
@@ -45,13 +46,17 @@ class CellularDataClient:
 
     def collect_registration_information(self):
         response = self.modem.send_at("AT+COPS?", await_all=["OK"])
-        LOG(f"COPS - Operator Selection: {response.splitlines()[2]}")
+        LOG("COPS - Operator Selection: {}".format(get_line(response, "+COPS:")))
         response = self.modem.send_at("AT+CPSI?", await_all=["OK"])
-        LOG(f"CPSI - UE System Information: {response.splitlines()[2]}")
+        LOG("CPSI - UE System Information: {}".format(get_line(response, "+CPSI:")))
         response = self.modem.send_at("AT+CSQ", await_all=["OK"])
-        LOG(f"CSQ - Signal Quality Report: {response.splitlines()[2]}")
+        LOG("CSQ - Signal Quality Report: {}".format(get_line(response, "+CSQ:")))
         response = self.modem.send_at("AT+CEREG?", await_all=["OK"])
-        LOG(f"CEREG - EPS Network Registration Status: {response.splitlines()[2]}")
+        LOG(
+            "CEREG - EPS Network Registration Status: {}".format(
+                get_line(response, "+CEREG:")
+            )
+        )
 
     def connect(self):
         LOG("connecting")
@@ -87,6 +92,11 @@ class CellularDataClient:
         deadline = time.ticks_add(time.ticks_ms(), 60000)
         while time.ticks_diff(deadline, time.ticks_ms()) > 0:
             response = self.modem.send_at("AT+CEREG?")
+            LOG(
+                "CEREG - EPS Network Registration Status: {}".format(
+                    get_line(response, "+CEREG:")
+                )
+            )
             # <n> = 1 Enable network registration unsolicited result code
             # <stat>
             # 0 Not registered, MT is not currently searching an operator to
@@ -140,6 +150,7 @@ class CellularDataClient:
             self.modem.send_at('AT+CSSLCFG="sslversion",0,3', await_all=["OK"])
             self.modem.send_at(f"AT+CASSLCFG={conn_id},SSL,1", await_all=["OK"])
             self.modem.send_at('AT+CSSLCFG="ctxindex",0', await_all=["OK"])
+            # SNI = Server Name Indication
             self.modem.send_at(f'AT+CSSLCFG="sni",0,"{host}"', await_all=["OK"])
             LOG("SSL configured")
 
@@ -148,7 +159,9 @@ class CellularDataClient:
         # LOG(f"CSSLCFG - SSL Parameters of a Context Identifier: {response}")
         response = self.modem.send_at("AT+CASSLCFG?", await_all=["OK"])
         LOG(
-            f"CASSLCFG - SSL Certificate and Timeout Parameters: {response.splitlines()[2]}"
+            "CASSLCFG - SSL Certificate and Timeout Parameters: {}".format(
+                get_line(response, "+CASSLCFG:")
+            )
         )
 
         # async - CDNSGIP can arrive before OK
@@ -156,6 +169,10 @@ class CellularDataClient:
         # allows to measure time.
         self.modem.send_at(f'AT+CDNSGIP="{host}"', wait=5, await_all=["CDNSGIP:", "OK"])
         LOG("DNS resolved")
+
+        # check the modem time
+        response = self.modem.send_at("AT+CCLK?", await_all=["OK"])
+        LOG("CCLK - Clock: {}".format(get_line(response, "+CCLK:")))
 
         # <result>
         # 0 Success
@@ -174,15 +191,40 @@ class CellularDataClient:
         # 25 Certificate’s common name does not match
         # 26 Certificate’s common name does not match and time expired
         # 27 Connect failed
-        response = self.modem.send_at(
-            f'AT+CAOPEN={conn_id},0,"TCP","{host}",{port}',
-            wait=30,
-            # async - CAOPEN can arrive before OK
-            await_all=[f"+CAOPEN: {conn_id},", "OK"],
-        )
+        try:
+            response = self.modem.send_at(
+                f'AT+CAOPEN={conn_id},0,"TCP","{host}",{port}',
+                wait=30,  # TinyGSM waits for 75 s by default
+                # async - CAOPEN can arrive before OK
+                await_all=[f"+CAOPEN: {conn_id},", "OK"],
+            )
+        except ModemError:
+            LOG(
+                "CAOPEN - Open a TCP/UDP Connection: {}".format(
+                    get_line(response, "+CAOPEN:")
+                )
+            )
+            response = self.modem.send_at("AT+CASTATE?", await_all=["OK"])
+            LOG(
+                "CASTATE - TCP/UDP Connection State: {}".format(
+                    get_line(response, "+CASTATE:")
+                )
+            )
+            raise
         if f"+CAOPEN: {conn_id},0" in response:
             LOG("TCP connection opened")
         else:
+            LOG(
+                "CAOPEN - Open a TCP/UDP Connection: {}".format(
+                    get_line(response, "+CAOPEN:")
+                )
+            )
+            response = self.modem.send_at("AT+CASTATE?", await_all=["OK"])
+            LOG(
+                "CASTATE - TCP/UDP Connection State: {}".format(
+                    get_line(response, "+CASTATE:")
+                )
+            )
             raise CellularDataError("CAOPEN failed")
 
         body = obfuscate_payload(serialize_payload(payload)).encode("utf-8")
@@ -203,13 +245,17 @@ class CellularDataClient:
         received_bytes = 0
         while time.ticks_diff(deadline, time.ticks_ms()) > 0:
             response = self.modem.send_at("AT+CARECV?")
+            LOG(
+                "CARECV - Receive Data via an Established Connection: {}".format(
+                    get_line(response, "+CARECV:")
+                )
+            )
             match = re.search(r"\+CARECV:\s*\d+,(\d+)", response)
             if match:
                 received_bytes = int(match.group(1))
                 if received_bytes > 0:
                     LOG("CARECV bytes received")
                     break
-            LOG("CARECV no bytes received - trying again")
             # response = self.modem.send_at("AT+CASTATE?")
             # LOG(f"CASTATE {response=}")
 
