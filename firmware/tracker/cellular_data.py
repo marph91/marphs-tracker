@@ -123,6 +123,17 @@ class CellularDataClient:
         self.modem.send_at("AT+CNACT=0,1", wait=5, await_all=["OK"])
         LOG("activating bearer successful")
 
+        response = self.modem.send_at("AT+CNACT?", await_all=["OK"])
+        LOG("CNACT - APP Network Active: {}".format(get_line(response, "+CNACT:")))
+        response = self.modem.send_at("AT+CGPADDR", await_all=["OK"])
+        LOG("CGPADDR - PDP Address: {}".format(get_line(response, "+CGPADDR:")))
+        response = self.modem.send_at("AT+CASTATE?", await_all=["OK"])
+        LOG(
+            "CASTATE - TCP/UDP Connection State: {}".format(
+                get_line(response, "+CASTATE:")
+            )
+        )
+
         self._connected = True
         return True
 
@@ -171,6 +182,7 @@ class CellularDataClient:
         LOG("DNS resolved")
 
         # check the modem time
+        # timezone is in quarters - for example 08 means 2 hours offset
         response = self.modem.send_at("AT+CCLK?", await_all=["OK"])
         LOG("CCLK - Clock: {}".format(get_line(response, "+CCLK:")))
 
@@ -272,5 +284,5 @@ class CellularDataClient:
 
     def disconnect(self):
         # it's ok to fail if the network is deactivated already
-        self.modem.send_at("AT+CNACT=0,0", wait=3)
+        self.modem.send_at("AT+CNACT=0,0", wait=3, await_any=["OK", "ERROR"])
         self._connected = False
