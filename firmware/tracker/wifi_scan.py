@@ -29,17 +29,11 @@ def format_bssid(bssid):
 def normalize_scan_results(scan_results):
     """Convert raw WLAN scan tuples into normalized dicts."""
     normalized = []
-    for entry in scan_results:
-        ssid = _decode_ssid(entry[0])
-        bssid = format_bssid(entry[1])
-        rssi = entry[3]
-        normalized.append(
-            {
-                "ssid": ssid,
-                "bssid": bssid,
-                "rssi": rssi,
-            }
-        )
+    for ssid_raw, bssid_raw, _channel, rssi_raw, _security, _hidden in scan_results:
+        ssid = _decode_ssid(ssid_raw)
+        bssid = format_bssid(bssid_raw)
+        rssi = int(rssi_raw)
+        normalized.append({"ssid": ssid, "bssid": bssid, "rssi": rssi})
     return normalized
 
 

@@ -24,11 +24,26 @@ def main():
             # WIFI based location
             data = json.dumps(
                 {
-                    "type": "wifi",
+                    "source": "wifi",
                     "wifiAccessPoints": [
-                        {"macAddress": "00:00:08:EE:7A:A5", "signalStrength": -50}
+                        {
+                            "macAddress": "36:2C:C4:88:DA:EE",
+                            "signalStrength": random.random() * -100,
+                        },
+                        {
+                            "macAddress": "1C:ED:6F:CD:74:46",
+                            "signalStrength": random.random() * -100,
+                        },
+                        {
+                            "macAddress": "44:15:24:01:80:25",
+                            "signalStrength": random.random() * -100,
+                        },
+                        {
+                            "macAddress": "1E:ED:6F:CD:74:46",
+                            "signalStrength": random.random() * -100,
+                        },
                     ],
-                    "battery_level": 55,
+                    "batt": 55,
                 }
             )
             obfuscated = xor_crypt(
@@ -41,10 +56,14 @@ def main():
             # GNSS based location
             data = json.dumps(
                 {
-                    "type": "gnss",
+                    "source": "gnss",
                     "lat": random.random() * 180.0 - 90.0,
                     "lon": random.random() * 360.0 - 180.0,
-                    "battery_level": 44,
+                    "altitude": random.randint(-10, 100),
+                    "speed": random.random() * 1000.0,
+                    "heading": random.random() * 360.0,
+                    "hdop": random.random() * 100.0,
+                    "batt": 44,
                 }
             )
             # encrypted = xxtea.encrypt_hex(data.encode("utf-8"), key)

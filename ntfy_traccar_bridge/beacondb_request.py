@@ -14,7 +14,7 @@ def beacondb_request(data):
 
     response = requests.post(url, json=data, headers=headers)
     if response.status_code != 200:
-        print("Not found")
+        print(f"Not found - HTTP {response.status_code}")
         sys.exit()
     print(response.text)
     # response.raise_for_status()

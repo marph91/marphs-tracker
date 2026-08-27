@@ -16,30 +16,29 @@ def test_build_wifi_payload_shape():
             {"macAddress": "aa:bb:cc:dd:ee:01", "signalStrength": -40},
             {"macAddress": "aa:bb:cc:dd:ee:02", "signalStrength": -55},
         ],
-        100,
     )
-    assert payload["type"] == "wifi"
+    assert payload["source"] == "wifi"
     assert len(payload["wifiAccessPoints"]) == 2
     assert payload["wifiAccessPoints"][0]["macAddress"] == "aa:bb:cc:dd:ee:01"
 
 
 def test_build_gnss_payload_shape():
-    payload = build_gnss_payload(48.137154, 11.576124, 20)
+    payload = build_gnss_payload({"lat": 48.137154, "lon": 11.576124, "batt": 20})
     assert payload == {
-        "type": "gnss",
+        "source": "gnss",
         "lat": 48.137154,
         "lon": 11.576124,
-        "battery_level": 20,
+        "batt": 20,
     }
 
 
 def test_serialize_payload_roundtrip():
     payload = build_wifi_payload(
-        [{"macAddress": "aa:bb:cc:dd:ee:ff", "signalStrength": -51}], -1
+        [{"macAddress": "aa:bb:cc:dd:ee:ff", "signalStrength": -51}]
     )
     serialized = serialize_payload(payload)
     parsed = json.loads(serialized)
-    assert parsed["type"] == "wifi"
+    assert parsed["source"] == "wifi"
     assert parsed["wifiAccessPoints"][0]["signalStrength"] == -51
 
 

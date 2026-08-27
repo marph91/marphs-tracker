@@ -65,7 +65,7 @@ def test_wifi_path_posts_without_gnss(hw_functions):
     hw_functions["gnss"].enable.assert_not_called()
     hw_functions["cellular_data"].post_json.assert_called_once()
     payload = hw_functions["cellular_data"].post_json.call_args[0][1]
-    assert payload["type"] == "wifi"
+    assert payload["source"] == "wifi"
     assert len(payload["wifiAccessPoints"]) == config.WIFI_TOP_N
 
 

@@ -10,23 +10,16 @@ except ImportError:
     import json
 
 
-def build_wifi_payload(access_points, battery_level):
+def build_wifi_payload(access_points):
     """Return wifi payload dict with top access points."""
-    return {
-        "type": "wifi",
-        "battery_level": battery_level,
-        "wifiAccessPoints": list(access_points),
-    }
+    return {"source": "wifi", "wifiAccessPoints": list(access_points)}
 
 
-def build_gnss_payload(lat, lon, battery_level):
+def build_gnss_payload(data):
     """Return gnss payload dict with coordinates."""
-    return {
-        "type": "gnss",
-        "battery_level": battery_level,
-        "lat": lat,
-        "lon": lon,
-    }
+    payload = {"source": "gnss"}
+    payload.update(data)
+    return payload
 
 
 def serialize_payload(payload):

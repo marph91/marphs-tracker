@@ -7,6 +7,60 @@ import logger
 LOG = logger.Logger(__name__)
 
 
+def parse_fix(response):
+    if "+CGNSINF:" not in response:
+        return None
+
+    try:
+        data = response.split("+CGNSINF: ", 1)[1].split("\n", 1)[0]
+        # HDOP = Horizontal Dilution of Precision
+        (
+            _run,
+            fix_status,
+            _timestamp,
+            latitude_str,
+            longitude_str,
+            altitude_str,
+            speed_str,
+            course_str,
+            _fix_mode,
+            _,
+            hdop_str,
+            _pdop,
+            _vdop,
+            _,
+            _satellites_in_view,
+            _,
+            _hpa,
+            _vpa,
+        ) = data.split(",")
+
+        if fix_status != "1":
+            return None
+
+        latitude = 0.0 if not latitude_str else float(latitude_str)
+        longitude = 0.0 if not longitude_str else float(longitude_str)
+        altitude = 0.0 if not altitude_str else float(altitude_str)
+        speed = 0.0 if not speed_str else float(speed_str)
+        course = 0.0 if not course_str else float(course_str)
+        hdop = 9999.9 if not hdop_str else float(hdop_str)
+    except ValueError:
+        return None
+
+    if latitude == 0.0 and longitude == 0.0:
+        return None
+
+    # Format: https://www.traccar.org/osmand/
+    return {
+        "lat": latitude,
+        "lon": longitude,
+        "altitude": altitude,
+        "speed": speed,
+        "heading": course,
+        "hdop": hdop,
+    }
+
+
 class GnssReader:
     """Read GNSS coordinates from modem AT+CGNSINF."""
 
@@ -73,28 +127,6 @@ class GnssReader:
         self.pmu.disable_gnss_antenna()
         return "OK" in response
 
-    def _parse_fix(self, response):
-        if "+CGNSINF:" not in response:
-            return None
-
-        data = response.split("+CGNSINF: ", 1)[1].split("\n", 1)[0]
-        values = data.split(",")
-        if len(values) < 5:
-            return None
-        if values[1] != "1":
-            return None
-
-        try:
-            lat = float(values[3])
-            lon = float(values[4])
-        except ValueError:
-            return None
-
-        if lat == 0.0 and lon == 0.0:
-            return None
-
-        return {"lat": lat, "lon": lon}
-
     def get_fix(self, timeout_s=60, poll_s=2):
         start_time_ms = time.ticks_ms()
         deadline_ms = time.ticks_add(start_time_ms, timeout_s * 1000)
@@ -102,10 +134,10 @@ class GnssReader:
             response = self.modem.send_at("AT+CGNSINF", await_all=["OK"])
             # LOG(response)
             current_time_s = time.ticks_diff(time.ticks_ms(), start_time_ms) // 1000
-            fix = self._parse_fix(response)
+            fix = parse_fix(response)
             if fix:
                 LOG(f"Fix after {current_time_s} seconds")
-                LOG(f"{fix}")
+                LOG(fix)
                 return fix
             LOG(f"No fix after {current_time_s} seconds")
             time.sleep(poll_s)

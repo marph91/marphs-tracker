@@ -25,7 +25,7 @@ def test_format_bssid_from_bytes():
 
 def test_normalize_scan_results():
     raw = [
-        (b"Test", bytes([0x11, 0x22, 0x33, 0x44, 0x55, 0x66]), 1, -42, 3, False),
+        (b"Test", bytes([0x11, 0x22, 0x33, 0x44, 0x55, 0x66]), 1, -42.45, 3, False),
     ]
     results = normalize_scan_results(raw)
     assert results[0]["ssid"] == "Test"
@@ -35,8 +35,8 @@ def test_normalize_scan_results():
 
 def test_home_ssid_present():
     results = _sample_results()
-    assert home_ssid_present(results, "HomeNet") is True
-    assert home_ssid_present(results, "Missing") is False
+    assert home_ssid_present(results, "HomeNet")
+    assert not home_ssid_present(results, "Missing")
 
 
 def test_top_aps_returns_best_rssi_first():

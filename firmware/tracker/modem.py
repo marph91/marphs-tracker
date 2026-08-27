@@ -22,7 +22,7 @@ def modem_response_to_seconds_since_2000(response):
     if not "+CCLK: " in response:
         return None
 
-    time_modem = response.split("+CCLK: ")[1].strip('"')
+    time_modem = response.split("+CCLK: ")[1].split("\n", 1)[0].strip('"')
     LOG(time_modem)
 
     year = 2000 + int(time_modem[0:2])

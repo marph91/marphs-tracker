@@ -4,6 +4,7 @@ import datetime as dt
 import json
 import pathlib
 import sys
+from urllib.parse import urlencode
 
 import requests
 
@@ -36,31 +37,43 @@ class MessageConverter:
                 ).decode("utf-8")
             )
 
-            match message_deobfuscated["type"]:
+            # Format: https://www.traccar.org/osmand/
+            data = {"timestamp": int(message_json["time"])}
+
+            match message_deobfuscated["source"]:
                 case "gnss":
-                    lat = message_deobfuscated["lat"]
-                    lon = message_deobfuscated["lon"]
+                    data.update(message_deobfuscated)
                 case "wifi":
-                    location = self.get_location_from_beacondb(
+                    location, accuracy = self.get_location_from_beacondb(
                         message_deobfuscated["wifiAccessPoints"]
                     )
                     if location is None:
                         print(
                             f"Location couldn't be resolved: {message_deobfuscated['wifiAccessPoints']}"
                         )
-                        return
-                    lat = location["lat"]
-                    lon = location["lng"]
+                    else:
+                        data.update(
+                            {
+                                "lat": location["lat"],
+                                "lon": location["lng"],
+                                "accuracy": accuracy,
+                            }
+                        )
+                    # TODO: OsmAnd format supports multiple WIFI, but there would be multiple
+                    # "wifi" keys in python. Just return the strongest wifi for now.
+                    # - there are at least 5 wifi APs (config)
+                    # - they are sorted by signal strength already
+                    strongest_wifi = message_deobfuscated["wifiAccessPoints"][0]
+                    data.update(
+                        {
+                            "wifi": f"{strongest_wifi['macAddress']},{strongest_wifi['signalStrength']}"
+                        }
+                    )
                 case _:
                     print("Unknown format")
                     return
 
-            self.send_to_traccar(
-                int(message_json["time"]),
-                lat,
-                lon,
-                message_deobfuscated["battery_level"],
-            )
+            self.send_to_traccar(data)
         except Exception as exc:  # want to catch all exceptions
             print(exc)
             raise
@@ -80,24 +93,21 @@ class MessageConverter:
         try:
             response.raise_for_status()
         except requests.exceptions.HTTPError:
-            return None
-        return response.json().get("location")
+            return None, None
+        return response.json().get("location"), response.json().get("accuracy")
 
-    def send_to_traccar(self, timestamp_s, lat, lon, battery_level):
+    def send_to_traccar(self, data):
         # save locations to log file
-        date = dt.datetime.fromtimestamp(timestamp_s, tz=dt.UTC)
+        date = dt.datetime.fromtimestamp(data["timestamp"], tz=dt.UTC)
         log_file = pathlib.Path(__file__).parent / f"log/{date.year}.csv"
         log_file.parent.mkdir(exist_ok=True)
         with log_file.open("a") as f:
-            f.write(
-                f"{date.replace(microsecond=0).isoformat()},{lat},{lon},{battery_level}\n"
-            )
+            f.write(",".join(f"{key}={value}" for key, value in data.items()) + "\n")
 
-        # Actually, it's OsmAnd format: https://www.traccar.org/osmand/
-        timestamp = timestamp_s * 1000
-        response = requests.get(
-            f"{firmware_config.TRACCAR_URL}?id={firmware_config.DEVICE_ID}&{timestamp=}&{lat=}&{lon=}&batt={battery_level}"
-        )
+        # Format: https://www.traccar.org/osmand/
+        query = {"id": firmware_config.DEVICE_ID, **data}
+        print(query)
+        response = requests.get(f"{firmware_config.TRACCAR_URL}?{urlencode(query)}")
         response.raise_for_status()
 
 

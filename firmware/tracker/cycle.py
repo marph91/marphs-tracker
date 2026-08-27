@@ -46,14 +46,13 @@ def run_cycle(config, hw_functions):
     if not hw_functions["modem"].check_sim():
         return CycleState.SIM_NOT_READY
 
-    payload = None
-    battery_percent = hw_functions["pmu"].get_battery_percent()
+    payload = {"batt": hw_functions["pmu"].get_battery_percent()}
     # TODO: Include timestamp here already?
     # seconds_since_2000 = hw_functions["modem"].get_time()
 
     if len(results) >= config.WIFI_MIN_APS:
         access_points = top_aps(results, config.WIFI_TOP_N)
-        payload = build_wifi_payload(access_points, battery_percent)
+        payload.update(build_wifi_payload(access_points))
         LOG(f"using wifi path with {len(access_points)} APs")
     else:
         LOG(f"fewer than {config.WIFI_MIN_APS} APs, using GNSS path")
@@ -62,15 +61,15 @@ def run_cycle(config, hw_functions):
 
         try:
             hw_functions["gnss"].config()
-            fix = hw_functions["gnss"].get_fix(config.GNSS_FIX_TIMEOUT_S)
+            gnss_fix = hw_functions["gnss"].get_fix(config.GNSS_FIX_TIMEOUT_S)
         finally:
             hw_functions["gnss"].disable()
 
-        if not fix:
+        if not gnss_fix:
             return CycleState.NO_FIX
 
-        payload = build_gnss_payload(fix["lat"], fix["lon"], battery_percent)
-    LOG(f"{battery_percent=}")
+        payload.update(build_gnss_payload(gnss_fix))
+    LOG(payload)
 
     try:
         hw_functions["cellular_data"].connect()
