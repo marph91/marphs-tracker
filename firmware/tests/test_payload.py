@@ -2,7 +2,7 @@ import json
 
 import config
 from tracker.payload import (
-    build_gps_payload,
+    build_gnss_payload,
     build_wifi_payload,
     obfuscate_payload,
     serialize_payload,
@@ -23,10 +23,10 @@ def test_build_wifi_payload_shape():
     assert payload["wifiAccessPoints"][0]["macAddress"] == "aa:bb:cc:dd:ee:01"
 
 
-def test_build_gps_payload_shape():
-    payload = build_gps_payload(48.137154, 11.576124, 20)
+def test_build_gnss_payload_shape():
+    payload = build_gnss_payload(48.137154, 11.576124, 20)
     assert payload == {
-        "type": "gps",
+        "type": "gnss",
         "lat": 48.137154,
         "lon": 11.576124,
         "battery_level": 20,

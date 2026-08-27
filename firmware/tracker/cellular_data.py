@@ -284,5 +284,5 @@ class CellularDataClient:
 
     def disconnect(self):
         # it's ok to fail if the network is deactivated already
-        self.modem.send_at("AT+CNACT=0,0", wait=3, await_any=["OK", "ERROR"])
+        self.modem.send_at("AT+CNACT=0,0")
         self._connected = False

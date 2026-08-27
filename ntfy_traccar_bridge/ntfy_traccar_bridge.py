@@ -37,7 +37,7 @@ class MessageConverter:
             )
 
             match message_deobfuscated["type"]:
-                case "gps":
+                case "gnss":
                     lat = message_deobfuscated["lat"]
                     lon = message_deobfuscated["lon"]
                 case "wifi":

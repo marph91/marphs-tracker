@@ -2,7 +2,7 @@
 
 import logger
 
-from tracker.payload import build_gps_payload, build_wifi_payload
+from tracker.payload import build_gnss_payload, build_wifi_payload
 from tracker.wifi_scan import home_ssid_present, top_aps
 
 LOG = logger.Logger(__name__)
@@ -29,7 +29,7 @@ def run_cycle(config, hw_functions):
     Pass them here to allow native tests with mocks.
     hw_functions must provide:
         pmu, modem,
-        scan_wifi, gps, cellular_data, sleep, log
+        scan_wifi, gnss, cellular_data, sleep, log
     """
     if not hw_functions["pmu"].begin():
         return CycleState.PMU_INIT_FAILED
@@ -54,20 +54,20 @@ def run_cycle(config, hw_functions):
         payload = build_wifi_payload(access_points, battery_percent)
         LOG(f"using wifi path with {len(access_points)} APs")
     else:
-        LOG(f"fewer than {config.WIFI_MIN_APS} APs, using GPS path")
-        if not hw_functions["gps"].enable():
+        LOG(f"fewer than {config.WIFI_MIN_APS} APs, using GNSS path")
+        if not hw_functions["gnss"].enable():
             return CycleState.NO_FIX
 
         try:
-            hw_functions["gps"].config()
-            fix = hw_functions["gps"].get_fix(config.GPS_FIX_TIMEOUT_S)
+            hw_functions["gnss"].config()
+            fix = hw_functions["gnss"].get_fix(config.GNSS_FIX_TIMEOUT_S)
         finally:
-            hw_functions["gps"].disable()
+            hw_functions["gnss"].disable()
 
         if not fix:
             return CycleState.NO_FIX
 
-        payload = build_gps_payload(fix["lat"], fix["lon"], battery_percent)
+        payload = build_gnss_payload(fix["lat"], fix["lon"], battery_percent)
     LOG(f"{battery_percent=}")
 
     try:

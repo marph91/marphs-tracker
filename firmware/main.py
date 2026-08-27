@@ -7,7 +7,7 @@ import logger
 import machine
 from tracker.cellular_data import CellularDataClient
 from tracker.cycle import CycleState, run_cycle
-from tracker.gps import GpsReader
+from tracker.gnss import GnssReader
 from tracker.modem import AtModem
 from tracker.pmu import PmuController
 from tracker.wifi_scan import scan_wifi
@@ -99,7 +99,7 @@ def main():
         "pmu": pmu,
         "modem": modem,
         "scan_wifi": scan_wifi,
-        "gps": GpsReader(pmu, modem),
+        "gnss": GnssReader(pmu, modem),
         "cellular_data": CellularDataClient(modem, config),
     }
 

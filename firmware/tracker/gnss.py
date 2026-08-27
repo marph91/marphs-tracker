@@ -1,4 +1,4 @@
-"""GPS fix acquisition via SIM7080G AT commands."""
+"""GNSS fix acquisition via SIM7080G AT commands."""
 
 import time
 
@@ -7,8 +7,8 @@ import logger
 LOG = logger.Logger(__name__)
 
 
-class GpsReader:
-    """Read GPS coordinates from modem AT+CGNSINF."""
+class GnssReader:
+    """Read GNSS coordinates from modem AT+CGNSINF."""
 
     def __init__(self, pmu, modem):
         self.pmu = pmu
@@ -64,13 +64,13 @@ class GpsReader:
         self.modem.send_at("AT+CGNSPWR=1", wait=2, await_all=["OK"])
 
     def enable(self):
-        self.pmu.enable_gps_antenna()
+        self.pmu.enable_gnss_antenna()
         response = self.modem.send_at("AT+CGNSPWR=1", wait=2, await_all=["OK"])
         return "OK" in response
 
     def disable(self):
         response = self.modem.send_at("AT+CGNSPWR=0", wait=2, await_all=["OK"])
-        self.pmu.disable_gps_antenna()
+        self.pmu.disable_gnss_antenna()
         return "OK" in response
 
     def _parse_fix(self, response):

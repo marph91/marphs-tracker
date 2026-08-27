@@ -27,7 +27,7 @@ ENCRYPTION_KEY = const(b"secret_key")
 WIFI_MIN_APS = const(5)
 # Maximum number of Wi-Fi APs included in the payload. Affects data usage.
 WIFI_TOP_N = const(5)
-GPS_FIX_TIMEOUT_S = const(60)
+GNSS_FIX_TIMEOUT_S = const(60)
 
 # Cellular data provider settings (fill in before use)
 CELLULAR_DATA_APN = const("")

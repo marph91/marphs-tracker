@@ -1,4 +1,4 @@
-"""AXP2101 PMU helpers for modem and GPS power rails."""
+"""AXP2101 PMU helpers for modem and gnss power rails."""
 
 import logger
 import utilities
@@ -17,7 +17,7 @@ class PmuController:
         self.i2c = I2C(0, scl=Pin(utilities.I2C_SCL), sda=Pin(utilities.I2C_SDA))
 
     def begin(self):
-        """Initialize PMU and enable level shifter + modem + GPS rails."""
+        """Initialize PMU and enable level shifter + modem + gnss rails."""
         if self._initialized:
             return True
 
@@ -34,7 +34,7 @@ class PmuController:
         self._pmu.enableBLDO1()
 
         self.enable_modem()
-        self.enable_gps_antenna()
+        self.enable_gnss_antenna()
 
         self._pmu.disableTSPinMeasure()
         self._initialized = True
@@ -52,11 +52,11 @@ class PmuController:
     def disable_modem(self):
         self._pmu.disableDC(3)
 
-    def enable_gps_antenna(self):
+    def enable_gnss_antenna(self):
         self._pmu.setBLDO2Voltage(3300)
         self._pmu.enableBLDO2()
 
-    def disable_gps_antenna(self):
+    def disable_gnss_antenna(self):
         self._pmu.disableBLDO(2)
 
     def power_down_for_sleep(self):
@@ -75,8 +75,8 @@ class PmuController:
 
         # BLDO1 is the level-converter supply
         self._pmu.disableBLDO(1)
-        # GPS supply
-        self.disable_gps_antenna()  # self._pmu.disableBLDO(2)
+        # gnss supply
+        self.disable_gnss_antenna()  # self._pmu.disableBLDO(2)
 
         # DC2 = unused
         self._pmu.disableDC(2)

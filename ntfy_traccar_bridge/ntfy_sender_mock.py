@@ -38,10 +38,10 @@ def main():
             response.raise_for_status()
             time.sleep(10)
 
-            # GPS based location
+            # GNSS based location
             data = json.dumps(
                 {
-                    "type": "gps",
+                    "type": "gnss",
                     "lat": random.random() * 180.0 - 90.0,
                     "lon": random.random() * 360.0 - 180.0,
                     "battery_level": 44,

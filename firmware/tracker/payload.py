@@ -19,10 +19,10 @@ def build_wifi_payload(access_points, battery_level):
     }
 
 
-def build_gps_payload(lat, lon, battery_level):
-    """Return gps payload dict with coordinates."""
+def build_gnss_payload(lat, lon, battery_level):
+    """Return gnss payload dict with coordinates."""
     return {
-        "type": "gps",
+        "type": "gnss",
         "battery_level": battery_level,
         "lat": lat,
         "lon": lon,
