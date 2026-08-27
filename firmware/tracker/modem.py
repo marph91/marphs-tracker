@@ -13,6 +13,28 @@ class ModemError(Exception):
     pass
 
 
+def modem_response_to_seconds_since_2000(response):
+    """
+    Convert the timestamp of the modem response to seconds since epoch (2000).
+    The epoch is defined by the micropython port of the time module:
+    https://docs.micropython.org/en/latest/library/time.html#module-time
+    """
+    if not "+CCLK: " in response:
+        return None
+
+    time_modem = response.split("+CCLK: ")[1].strip('"')
+    LOG(time_modem)
+
+    year = 2000 + int(time_modem[0:2])
+    month = int(time_modem[3:5])
+    day = int(time_modem[6:8])
+    hour = int(time_modem[9:11])
+    minute = int(time_modem[12:14])
+    second = int(time_modem[15:17])
+
+    return time.mktime((year, month, day, hour, minute, second, 0, 0))
+
+
 class AtModem:
     """UART AT interface for the SIM7080G modem."""
 
@@ -27,6 +49,14 @@ class AtModem:
         self._dtr = Pin(utilities.BOARD_MODEM_DTR_PIN, Pin.OUT)
         self._dtr.value(0)
         self._started = False
+
+    def get_time(self):
+        """Seconds since epoch (2000)."""
+        # TODO: handle timezone
+        # format: yy/MM/dd,hh:mm:ss±zz
+        # zz in quarters
+        response = self.send_at("AT+CCLK?", await_all=["OK"])
+        return modem_response_to_seconds_since_2000(response)
 
     def send_at(self, command, wait=1, await_any=None, await_all=None):
         if command:

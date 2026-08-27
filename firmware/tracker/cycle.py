@@ -48,6 +48,8 @@ def run_cycle(config, hw_functions):
 
     payload = None
     battery_percent = hw_functions["pmu"].get_battery_percent()
+    # TODO: Include timestamp here already?
+    # seconds_since_2000 = hw_functions["modem"].get_time()
 
     if len(results) >= config.WIFI_MIN_APS:
         access_points = top_aps(results, config.WIFI_TOP_N)
