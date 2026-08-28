@@ -24,24 +24,63 @@ def main():
             # WIFI based location
             data = json.dumps(
                 {
-                    "source": "wifi",
                     "wifiAccessPoints": [
                         {
-                            "macAddress": "36:2C:C4:88:DA:EE",
-                            "signalStrength": random.random() * -100,
+                            "macAddress": "0c:c5:74:47:16:10",
+                            "signalStrength": -39,
+                            "channel": random.randint(1, 13),
                         },
                         {
-                            "macAddress": "1C:ED:6F:CD:74:46",
-                            "signalStrength": random.random() * -100,
+                            "macAddress": "1e:ed:6f:cd:74:45",
+                            "signalStrength": -55,
+                            "channel": random.randint(1, 13),
                         },
                         {
-                            "macAddress": "44:15:24:01:80:25",
-                            "signalStrength": random.random() * -100,
+                            "macAddress": "1c:ed:6f:cd:74:45",
+                            "signalStrength": -55,
+                            "channel": random.randint(1, 13),
                         },
                         {
-                            "macAddress": "1E:ED:6F:CD:74:46",
-                            "signalStrength": random.random() * -100,
+                            "macAddress": "ec:6c:9a:13:e1:ce",
+                            "signalStrength": -57,
+                            "channel": random.randint(1, 13),
                         },
+                        {
+                            "macAddress": "6c:15:db:27:9c:6e",
+                            "signalStrength": -62,
+                            "channel": random.randint(1, 13),
+                        },
+                        # {
+                        #     "macAddress": "36:2C:C4:88:DA:EE",
+                        #     "signalStrength": random.random() * -100,
+                        #     "channel": random.randint(1, 13),
+                        # },
+                        # {
+                        #     "macAddress": "1C:ED:6F:CD:74:46",
+                        #     "signalStrength": random.random() * -100,
+                        #     "channel": random.randint(1, 13),
+                        # },
+                        # {
+                        #     "macAddress": "44:15:24:01:80:25",
+                        #     "signalStrength": random.random() * -100,
+                        #     "channel": random.randint(1, 13),
+                        # },
+                        # {
+                        #     "macAddress": "1E:ED:6F:CD:74:46",
+                        #     "signalStrength": random.random() * -100,
+                        #     "channel": random.randint(1, 13),
+                        # },
+                    ],
+                    "cellTowers": [
+                        {
+                            "radioType": "lte",
+                            "mobileCountryCode": 262,
+                            "mobileNetworkCode": 2,
+                            "locationAreaCode": 0xAAB4,
+                            "cellId": 8596225,
+                            "psc": 147,
+                            "signalStrength": -74,
+                        }
                     ],
                     "batt": 55,
                 }
@@ -56,13 +95,14 @@ def main():
             # GNSS based location
             data = json.dumps(
                 {
-                    "source": "gnss",
-                    "lat": random.random() * 180.0 - 90.0,
-                    "lon": random.random() * 360.0 - 180.0,
-                    "altitude": random.randint(-10, 100),
-                    "speed": random.random() * 1000.0,
-                    "heading": random.random() * 360.0,
-                    "hdop": random.random() * 100.0,
+                    "gnss": {
+                        "lat": random.random() * 180.0 - 90.0,
+                        "lon": random.random() * 360.0 - 180.0,
+                        "altitude": random.randint(-10, 100),
+                        "speed": random.random() * 1000.0,
+                        "heading": random.random() * 360.0,
+                        "hdop": random.random() * 100.0,
+                    },
                     "batt": 44,
                 }
             )

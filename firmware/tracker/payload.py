@@ -10,18 +10,6 @@ except ImportError:
     import json
 
 
-def build_wifi_payload(access_points):
-    """Return wifi payload dict with top access points."""
-    return {"source": "wifi", "wifiAccessPoints": list(access_points)}
-
-
-def build_gnss_payload(data):
-    """Return gnss payload dict with coordinates."""
-    payload = {"source": "gnss"}
-    payload.update(data)
-    return payload
-
-
 def serialize_payload(payload):
     """Serialize payload dict to JSON string."""
     return json.dumps(payload, separators=(",", ":"))

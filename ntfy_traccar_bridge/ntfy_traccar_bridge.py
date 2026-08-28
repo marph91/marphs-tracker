@@ -38,52 +38,78 @@ class MessageConverter:
             )
 
             # Format: https://www.traccar.org/osmand/
-            data = {"timestamp": int(message_json["time"])}
+            traccar_data = {"timestamp": int(message_json["time"])}
+            if battery := message_deobfuscated.get("batt"):
+                traccar_data["batt"] = battery
 
-            match message_deobfuscated["source"]:
-                case "gnss":
-                    data.update(message_deobfuscated)
-                case "wifi":
-                    location, accuracy = self.get_location_from_beacondb(
-                        message_deobfuscated["wifiAccessPoints"]
+            # Data for resolving the location with wifi and cell tower data.
+            # Not relevant for the GNSS path, since the location is available there.
+            beacondb_data = {}
+
+            if "gnss" in message_deobfuscated:
+                traccar_data.update(message_deobfuscated["gnss"])
+
+            if "wifiAccessPoints" in message_deobfuscated:
+                beacondb_data["wifiAccessPoints"] = message_deobfuscated[
+                    "wifiAccessPoints"
+                ]
+
+                # TODO: OsmAnd format supports multiple WIFI, but there would be multiple
+                # "wifi" keys in python. Just return the strongest wifi for now.
+                # - there are at least 5 wifi APs (config)
+                # - they are sorted by signal strength already
+                strongest_wifi = message_deobfuscated["wifiAccessPoints"][0]
+                traccar_data["wifi"] = (
+                    f"{strongest_wifi['macAddress']},{int(strongest_wifi['signalStrength'])}"
+                )
+
+            if message_deobfuscated.get("cellTowers"):
+                beacondb_data["cellTowers"] = message_deobfuscated["cellTowers"]
+
+                # There should be only one cell tower.
+                # It's thw cell tower over which the data was sent.
+                strongest_cell_tower = message_deobfuscated["cellTowers"][0]
+                traccar_data["cell"] = ",".join(
+                    map(
+                        str,
+                        (
+                            strongest_cell_tower["mobileCountryCode"],
+                            strongest_cell_tower["mobileNetworkCode"],
+                            strongest_cell_tower["locationAreaCode"],
+                            strongest_cell_tower["cellId"],  # TODO: cellId or psc?
+                            int(strongest_cell_tower["signalStrength"]),
+                        ),
                     )
-                    if location is None:
-                        print(
-                            f"Location couldn't be resolved: {message_deobfuscated['wifiAccessPoints']}"
-                        )
-                    else:
-                        data.update(
-                            {
-                                "lat": location["lat"],
-                                "lon": location["lng"],
-                                "accuracy": accuracy,
-                            }
-                        )
-                    # TODO: OsmAnd format supports multiple WIFI, but there would be multiple
-                    # "wifi" keys in python. Just return the strongest wifi for now.
-                    # - there are at least 5 wifi APs (config)
-                    # - they are sorted by signal strength already
-                    strongest_wifi = message_deobfuscated["wifiAccessPoints"][0]
-                    data.update(
+                )
+
+            # resolve location by wifi APs and cell towers with beaconDB
+            if beacondb_data and not "lat" in traccar_data:
+                location, accuracy = self.get_location_from_beacondb(beacondb_data)
+                if location is None:
+                    print(f"Location couldn't be resolved: {beacondb_data}")
+                else:
+                    print(f"Resolved location: {location}")
+                    traccar_data.update(
                         {
-                            "wifi": f"{strongest_wifi['macAddress']},{strongest_wifi['signalStrength']}"
+                            "lat": location["lat"],
+                            "lon": location["lng"],
+                            "accuracy": accuracy,
                         }
                     )
-                case _:
-                    print("Unknown format")
-                    return
 
-            self.send_to_traccar(data)
+            # finally send all the data to the traccar instance
+            self.send_to_traccar(traccar_data)
         except Exception as exc:  # want to catch all exceptions
             print(exc)
             raise
 
-    def get_location_from_beacondb(self, access_points):
+    def get_location_from_beacondb(self, device_data):
         # https://beacondb.net/
         # https://ichnaea.readthedocs.io/en/latest/api/geolocate.html
 
         data = {
-            "wifiAccessPoints": access_points,
+            # device data contains wifi access points and cell towers
+            **device_data,
             # don't resolve by IP, since this would yield the location of the scripts machine
             "considerIp": False,
         }

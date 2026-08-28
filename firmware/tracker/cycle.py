@@ -2,7 +2,6 @@
 
 import logger
 
-from tracker.payload import build_gnss_payload, build_wifi_payload
 from tracker.wifi_scan import home_ssid_present, top_aps
 
 LOG = logger.Logger(__name__)
@@ -52,7 +51,7 @@ def run_cycle(config, hw_functions):
 
     if len(results) >= config.WIFI_MIN_APS:
         access_points = top_aps(results, config.WIFI_TOP_N)
-        payload.update(build_wifi_payload(access_points))
+        payload["wifiAccessPoints"] = list(access_points)
         LOG(f"using wifi path with {len(access_points)} APs")
     else:
         LOG(f"fewer than {config.WIFI_MIN_APS} APs, using GNSS path")
@@ -68,8 +67,7 @@ def run_cycle(config, hw_functions):
         if not gnss_fix:
             return CycleState.NO_FIX
 
-        payload.update(build_gnss_payload(gnss_fix))
-    LOG(payload)
+        payload["gnss"] = gnss_fix
 
     try:
         hw_functions["cellular_data"].connect()

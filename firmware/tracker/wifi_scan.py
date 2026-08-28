@@ -3,37 +3,37 @@
 import logger
 
 try:
+    # micropython
     import network
 except ImportError:
+    # python
     network = None  # needed for unit testing on native device
 
 
 LOG = logger.Logger(__name__)
 
 
-def _decode_ssid(ssid):
-    if isinstance(ssid, bytes):
-        return ssid.decode("utf-8", "ignore")
-    return ssid or ""
-
-
 def format_bssid(bssid):
-    """Format BSSID bytes or string as aa:bb:cc:dd:ee:ff."""
-    if isinstance(bssid, (bytes, bytearray)):
-        return ":".join(f"{b:02x}" for b in bssid)
-    if isinstance(bssid, str):
-        return bssid.lower()
-    raise TypeError("unsupported bssid type")
+    """Format BSSID bytes as aa:bb:cc:dd:ee:ff."""
+    return ":".join(f"{b:02x}" for b in bssid)
 
 
 def normalize_scan_results(scan_results):
-    """Convert raw WLAN scan tuples into normalized dicts."""
+    """
+    Convert raw WLAN scan tuples into normalized dicts.
+    - Source: https://docs.micropython.org/en/latest/library/network.WLAN.html#network.WLAN.scan
+    - Target: https://ichnaea.readthedocs.io/en/latest/api/geolocate.html#wifi-access-point-fields
+    """
     normalized = []
-    for ssid_raw, bssid_raw, _channel, rssi_raw, _security, _hidden in scan_results:
-        ssid = _decode_ssid(ssid_raw)
-        bssid = format_bssid(bssid_raw)
-        rssi = int(rssi_raw)
-        normalized.append({"ssid": ssid, "bssid": bssid, "rssi": rssi})
+    for ssid, bssid, channel, rssi, _security, _hidden in scan_results:
+        normalized.append(
+            {
+                "macAddress": format_bssid(bssid),
+                "ssid": ssid if isinstance(ssid, str) else ssid.decode("utf-8"),
+                "signalStrength": int(rssi),
+                "channel": channel,
+            }
+        )
     return normalized
 
 
@@ -49,16 +49,9 @@ def home_ssid_present(results, home_ssids):
 
 
 def top_aps(results, n=5):
-    """Return top N APs by RSSI."""
-    ranked = sorted(results, key=lambda ap: ap["rssi"], reverse=True)
-    top = ranked[:n]
-    return [
-        {
-            "macAddress": ap["bssid"],
-            "signalStrength": ap["rssi"],
-        }
-        for ap in top
-    ]
+    """Return top N APs by signal strength."""
+    ranked = sorted(results, key=lambda ap: ap["signalStrength"], reverse=True)
+    return ranked[:n]
 
 
 def scan_wifi():

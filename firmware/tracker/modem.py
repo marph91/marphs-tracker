@@ -60,6 +60,7 @@ class AtModem:
 
     def send_at(self, command, wait=1, await_any=None, await_all=None):
         if command:
+            # LOG(f">>> {command}")
             self.uart.write(command + "\r\n")
 
         if await_any is not None or await_all is not None:
@@ -68,6 +69,7 @@ class AtModem:
             while time.ticks_diff(deadline, time.ticks_ms()) > 0:
                 partial_response = self.uart.read()
                 if partial_response:
+                    # LOG(f"<<< {partial_response.decode('utf-8', 'ignore')!r}")
                     response += partial_response.decode("utf-8", "ignore")
                     # only consider complete lines
                     complete_lines = "".join(
@@ -91,6 +93,7 @@ class AtModem:
         response = self.uart.read()
         if not response:
             return ""
+        # LOG(f"<<< {response.decode('utf-8', 'ignore')!r}")
         return response.decode("utf-8", "ignore")
 
     def power_on(self):

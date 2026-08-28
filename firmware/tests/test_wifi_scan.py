@@ -8,12 +8,12 @@ from tracker.wifi_scan import (
 
 def _sample_results():
     return [
-        {"ssid": "HomeNet", "bssid": "aa:bb:cc:dd:ee:01", "rssi": -40},
-        {"ssid": "Cafe", "bssid": "aa:bb:cc:dd:ee:02", "rssi": -55},
-        {"ssid": "Guest", "bssid": "aa:bb:cc:dd:ee:03", "rssi": -70},
-        {"ssid": "Office", "bssid": "aa:bb:cc:dd:ee:04", "rssi": -65},
-        {"ssid": "Shop", "bssid": "aa:bb:cc:dd:ee:05", "rssi": -80},
-        {"ssid": "Other", "bssid": "aa:bb:cc:dd:ee:06", "rssi": -90},
+        {"ssid": "HomeNet", "macAddress": "aa:bb:cc:dd:ee:01", "signalStrength": -40},
+        {"ssid": "Cafe", "macAddress": "aa:bb:cc:dd:ee:02", "signalStrength": -55},
+        {"ssid": "Guest", "macAddress": "aa:bb:cc:dd:ee:03", "signalStrength": -70},
+        {"ssid": "Office", "macAddress": "aa:bb:cc:dd:ee:04", "signalStrength": -65},
+        {"ssid": "Shop", "macAddress": "aa:bb:cc:dd:ee:05", "signalStrength": -80},
+        {"ssid": "Other", "macAddress": "aa:bb:cc:dd:ee:06", "signalStrength": -90},
     ]
 
 
@@ -25,12 +25,13 @@ def test_format_bssid_from_bytes():
 
 def test_normalize_scan_results():
     raw = [
-        (b"Test", bytes([0x11, 0x22, 0x33, 0x44, 0x55, 0x66]), 1, -42.45, 3, False),
+        ("Test", bytes([0x11, 0x22, 0x33, 0x44, 0x55, 0x66]), 1, -42.45, 3, False),
     ]
     results = normalize_scan_results(raw)
+    assert results[0]["macAddress"] == "11:22:33:44:55:66"
     assert results[0]["ssid"] == "Test"
-    assert results[0]["bssid"] == "11:22:33:44:55:66"
-    assert results[0]["rssi"] == -42
+    assert results[0]["signalStrength"] == -42
+    assert results[0]["channel"] == 1
 
 
 def test_home_ssid_present():

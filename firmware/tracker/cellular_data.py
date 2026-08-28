@@ -15,6 +15,50 @@ class CellularDataError(Exception):
     pass
 
 
+def parse_cell_data(response):
+    # AT+CPSI?\r\r\n+CPSI: LTE CAT-M1,Online,262-02,0xAAB4,8596225,147,EUTRAN-BAND20,6300,3,3,-16,-103,-74,7\r\n\r\nOK\r\n
+    if "+CPSI: " not in response:
+        return None
+
+    data = response.split("+CPSI: ", 1)[1].split("\n", 1)[0]
+    # <System Mode>
+    # "NO SERVICE"
+    # "GSM"
+    # "LTE CAT-M1"
+    # "LTE NB-IOT"
+    if not data.startswith("LTE "):
+        return None  # TODO: support GSM
+
+    (
+        _system_mode,
+        _operation_mode,
+        mcc_mnc,
+        tracing_area_code,
+        serving_cell_id,
+        physical_cell_id,
+        _frequency_band,
+        _absolute_radio_frequency_channel_number,
+        _dlbw,
+        _ulbw,
+        _rsrq,
+        _rsrp,
+        rssi,
+        _rssn_r,
+    ) = data.split(",")
+    mobile_country_code, mobile_network_code = mcc_mnc.split("-", 1)
+
+    # Format: https://ichnaea.readthedocs.io/en/latest/api/geolocate.html#cell-tower-fields
+    return {
+        "radioType": "lte",
+        "mobileCountryCode": int(mobile_country_code),
+        "mobileNetworkCode": int(mobile_network_code),
+        "locationAreaCode": int(tracing_area_code, 16),
+        "cellId": int(serving_cell_id),
+        "psc": int(physical_cell_id),
+        "signalStrength": int(rssi),
+    }
+
+
 class CellularDataClient:
     """Configure cellular data bearer and send HTTPS POST requests."""
 
@@ -116,7 +160,6 @@ class CellularDataClient:
         else:
             self.collect_registration_information()
             raise CellularDataError("network registration timed out")
-        self.collect_registration_information()
         LOG("network registration successful")
 
         # activate network bearer
@@ -141,7 +184,14 @@ class CellularDataClient:
         if not self._connected:
             self.connect()
 
+        # enrich the wifi data with cell data for better localization
+        if "wifiAccessPoints" in payload:
+            LOG("enrich wifi payload with cell data")
+            response = self.modem.send_at("AT+CPSI?", await_all=["OK"])
+            payload["cellTowers"] = [parse_cell_data(response)]
+
         LOG("post json payload")
+        LOG(payload)
 
         secure, host, port, path = self._parse_url(url)
         conn_id = 0

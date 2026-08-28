@@ -8,9 +8,9 @@ from tracker.cycle import CycleState, run_cycle
 def _sample_results(count=6):
     return [
         {
+            "macAddress": f"aa:bb:cc:dd:ee:{i:02x}",
             "ssid": f"AP{i}",
-            "bssid": f"aa:bb:cc:dd:ee:{i:02x}",
-            "rssi": -40 - i,
+            "signalStrength": -40 - i,
         }
         for i in range(count)
     ]
@@ -41,9 +41,9 @@ def hw_functions():
 def test_home_ssid_skips_transmit(hw_functions):
     hw_functions["scan_wifi"].return_value = _sample_results() + [
         {
+            "macAddress": "ff:ff:ff:ff:ff:ff",
             "ssid": default_config.HOME_SSIDS[0],
-            "bssid": "ff:ff:ff:ff:ff:ff",
-            "rssi": -30,
+            "signalStrength": -30,
         }
     ]
     hw_functions["gnss"].get_fix.return_value = {"lat": 1.0, "lon": 2.0}
@@ -65,7 +65,7 @@ def test_wifi_path_posts_without_gnss(hw_functions):
     hw_functions["gnss"].enable.assert_not_called()
     hw_functions["cellular_data"].post_json.assert_called_once()
     payload = hw_functions["cellular_data"].post_json.call_args[0][1]
-    assert payload["source"] == "wifi"
+    assert "wifiAccessPoints" in payload
     assert len(payload["wifiAccessPoints"]) == config.WIFI_TOP_N
 
 
