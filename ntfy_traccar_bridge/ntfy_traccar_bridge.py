@@ -140,7 +140,7 @@ class MessageConverter:
 def main():
     message_converter = MessageConverter()
 
-    resp = requests.get(firmware_config.NTFY_URL, stream=True)
+    resp = requests.get(firmware_config.TARGET_URL, stream=True)
     for line in resp.iter_lines():
         if line:
             message_converter.handle_ntfy_message(line)

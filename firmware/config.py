@@ -18,7 +18,7 @@ SLEEP_MINUTES_AWAY = const(10)  # track more often when away
 HOME_SSIDS = const(("YourHomeWifiSSID", "SecondHomeSSID"))
 
 # HTTP endpoint receiving the payload from the device.
-NTFY_URL = const("https://publix.ntfy/topic/json")
+TARGET_URL = const("https://httpbin.org/post")
 # encryption parameters for the data
 ENCRYPTION_KEY = const(b"secret_key")
 

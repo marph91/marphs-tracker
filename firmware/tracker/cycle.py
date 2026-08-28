@@ -71,7 +71,7 @@ def run_cycle(config, hw_functions):
 
     try:
         hw_functions["cellular_data"].connect()
-        hw_functions["cellular_data"].post_json(config.NTFY_URL, payload)
+        hw_functions["cellular_data"].post_json(config.TARGET_URL, payload)
     except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
         LOG(f"{exc}")
         return CycleState.POST_FAILED if payload else CycleState.CONFIG_ERROR
