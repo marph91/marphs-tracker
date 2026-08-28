@@ -22,10 +22,11 @@ def sleep(time_ms, pmu, modem):
 
     # This is not necessary, since the MicroPico VSCode extension opens always
     # the prompt instead of executing main.py.
-    # if pmu.is_usb_connected():
-    #     # prevent boot loop to allow debugging
-    #     LOG("Don't go to sleep, since USB is connected.")
-    #     return
+    if pmu.is_usb_connected():
+        # prevent boot loop to allow debugging
+        # stop the script with ctrl+c
+        LOG("Don't go to sleep, since USB is connected.")
+        return
 
     modem.power_off()
     pmu.power_down_for_sleep()
