@@ -75,7 +75,8 @@ class AtModem:
                     complete_lines = "".join(
                         line
                         for line in response.splitlines(keepends=True)
-                        if line.endswith("\r\n")
+                        # line end or input line
+                        if line.endswith("\r\n") or line.endswith("> ")  # noqa: PIE810  # not supported in micropython
                     )
                     if (
                         await_any
