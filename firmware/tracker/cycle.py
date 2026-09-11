@@ -10,14 +10,14 @@ LOG = logger.Logger(__name__)
 # TODO: replace with enum when available:
 # https://github.com/micropython/micropython/issues/8545
 class CycleState:
-    PMU_INIT_FAILED = 0
-    HOME = 1
-    MODEM_POWER_ON_FAILED = 2
-    SIM_NOT_READY = 3
-    NO_FIX = 6
-    POST_FAILED = 7
-    CONFIG_ERROR = 8
-    FINISHED = 9
+    PMU_INIT_FAILED = "PMU_INIT_FAILED"
+    HOME = "HOME"
+    MODEM_POWER_ON_FAILED = "MODEM_POWER_ON_FAILED"
+    SIM_NOT_READY = "SIM_NOT_READY"
+    NO_FIX = "NO_FIX"
+    POST_FAILED = "POST_FAILED"
+    CONFIG_ERROR = "CONFIG_ERROR"
+    FINISHED = "FINISHED"
 
 
 def run_cycle(config, hw_functions):

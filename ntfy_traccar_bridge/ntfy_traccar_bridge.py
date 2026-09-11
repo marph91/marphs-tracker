@@ -39,7 +39,7 @@ class MessageConverter:
 
             # Format: https://www.traccar.org/osmand/
             traccar_data = {"timestamp": int(message_json["time"])}
-            if battery := message_deobfuscated.get("batt"):
+            if (battery := message_deobfuscated.get("batt")) is not None:
                 traccar_data["batt"] = battery
 
             # Data for resolving the location with wifi and cell tower data.
@@ -99,9 +99,8 @@ class MessageConverter:
 
             # finally send all the data to the traccar instance
             self.send_to_traccar(traccar_data)
-        except Exception as exc:  # want to catch all exceptions
+        except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
             print(exc)
-            raise
 
     def get_location_from_beacondb(self, device_data):
         # https://beacondb.net/
