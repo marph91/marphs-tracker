@@ -1,10 +1,27 @@
 [![tests](https://github.com/marph91/marphs-tracker/actions/workflows/tests.yml/badge.svg)](https://github.com/marph91/marphs-tracker/actions/workflows/tests.yml)
 
+## Motivation
+
+I want a thief protection for our new stroller.
+
+Requirements:
+
+- Small and mobile
+- Cheap
+- Can send from any location to a configurable endpoint
+- Without vendor-lock (no app/registration)
+
 ## Overview
 
 The tracker obtains the location based on GNSS or WIFI. This data is sent to a configurable URL. In my case, this is a NTFY instance. A custom script subscribes to the NTFY instance, converts the data and forwards it to a self-hosted Traccar server in my home lab.
 
-Please check the [documentation](./docs/) for setup instructions and further details.
+Please check the [documentation](./docs/) for setup instructions and further details:
+
+- [Quick start](./docs/quickstart.md)
+- [Software implementation details](./docs/software.md)
+- [Battery life estimation](./docs/battery.md)
+- [Cost estimation](./docs/costs.md)
+- [Search for a good LTE-M or NB-IoT SIM card](./docs/cellular_data.md)
 
 ```mermaid
 flowchart LR
@@ -15,7 +32,7 @@ flowchart LR
     subgraph DEVICE["📍 LILYGO T-SIM7080G"]
         direction TB
 
-        TRACKER["Tracker"] --> WIFI_PATH["📶 Wi-Fi path"]
+        TRACKER["Tracker"] --> WIFI_PATH["📶 WiFi path"]
 
         WIFI_PATH -->|"Configured home SSID detected"| DONE["Cycle finished"]
         WIFI_PATH -->|"Enough APs detected"| CELLULAR["LTE-M / NB-IoT"]
@@ -31,7 +48,7 @@ flowchart LR
     %% =========================================================
     subgraph PUBLIC["🌐 PUBLIC NETWORK"]
         NTFY["ntfy"]
-        BEACON["BeaconDB\nWi-Fi geolocation"]
+        BEACON["BeaconDB\nWiFi geolocation"]
     end
 
 
@@ -52,7 +69,7 @@ flowchart LR
 
     NTFY -->|"Subscribe"| CONVERTER
 
-    CONVERTER -->|"Wi-Fi AP lookup"| BEACON
+    CONVERTER -->|"WiFi AP lookup"| BEACON
     BEACON -->|"Location"| CONVERTER
 
     CONVERTER -->|"HTTP Request in OsmAnd format"| TRACCAR
@@ -62,7 +79,7 @@ flowchart LR
 
 | Abbreviation   | Description                                                         |
 | -------------- | ------------------------------------------------------------------- |
-| AP             | Access Point. I.e. a WiFi.                                          |
+| AP             | Access Point. I.e. a WiFi network.                                  |
 | BSSID          | Basic Service Set Identification. I.e. the MAC address of the WiFi. |
 | GNSS           | Global Navigation Satellite System. For example GPS or Galileo.     |
 | LTE-M / NB-IoT | Narrowband Cellular Standards for mobile data.                      |

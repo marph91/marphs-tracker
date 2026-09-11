@@ -4,7 +4,7 @@ From https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G-MicroPython:
 
 > SIM7080G supports NB-IoT and Cat-M in global frequency bands, but does not support 2G/3G/4G. Please confirm that the SIM card used supports NB-IoT or Cat-M before use.
 
-Cat-M is a sub category of LTE-M. See https://en.wikipedia.org/wiki/LTE-M#3GPP_Narrowband_Cellular_Standards. For simplicity, they are not differentiated here.
+Cat-M is a subcategory of LTE-M. See https://en.wikipedia.org/wiki/LTE-M#3GPP_Narrowband_Cellular_Standards. For simplicity, they are not differentiated here.
 
 | Plan                                  | Initial Cost      | Basic Fee   | Price     | Billing Unit | Remark                              |
 | ------------------------------------- | ----------------- | ----------- | --------- | ------------ | ----------------------------------- |
@@ -20,6 +20,8 @@ Cat-M is a sub category of LTE-M. See https://en.wikipedia.org/wiki/LTE-M#3GPP_N
 [1] https://developers.soracom.io/en/docs/network-connectivity/supported-carriers/#plan01s
 [2] https://developers.soracom.io/en/docs/billing-pricing/pricing-fee-schedule/
 [3] https://revierbedarf.at/products/multi-sim-karte
+
+Last checked: 2026-09-11
 
 ## Considerations
 

@@ -11,8 +11,8 @@ except ImportError:
 SLEEP_MINUTES_HOME = const(30)  # sleep for a longer time when home
 SLEEP_MINUTES_AWAY = const(10)  # track more often when away
 
-# SSID of your home Wi-Fis.
-# If any of these SSIDs are detected during the Wi-Fi scan,
+# SSID of your home WiFis.
+# If any of these SSIDs are detected during the WiFi scan,
 # the tracker assumes that it is at home and does not
 # transmit any tracking data.
 HOME_SSIDS = const(("YourHomeWifiSSID", "SecondHomeSSID"))
@@ -22,10 +22,10 @@ TARGET_URL = const("https://httpbin.org/post")
 # encryption parameters for the data
 ENCRYPTION_KEY = const(b"secret_key")
 
-# If fewer than this number of Wi-Fi access points
+# If fewer than this number of WiFi access points
 # are detected, GNSS is used instead.
 WIFI_MIN_APS = const(5)
-# Maximum number of Wi-Fi APs included in the payload. Affects data usage.
+# Maximum number of WiFi APs included in the payload. Affects data usage.
 WIFI_TOP_N = const(5)
 GNSS_FIX_TIMEOUT_S = const(60)
 

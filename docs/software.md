@@ -4,17 +4,17 @@
 
 ```mermaid
 flowchart TD
-    sleep -->|"60 min timer"| wake["Wake ESP32-S3"]
+    sleep -->|"timer"| wake["Wake ESP32-S3"]
 
-    wake --> enable_wifi["Enable Wi-Fi"]
-    enable_wifi --> scan_wifi["Scan nearby Wi-Fi"]
+    wake --> enable_wifi["Enable WiFi"]
+    enable_wifi --> scan_wifi["Scan nearby WiFi"]
 
-    scan_wifi --> E{"Home Wi-Fi detected?"}
+    scan_wifi --> E{"Home WiFi detected?"}
 
     E -->|"Yes"| disable["Disable Everything"]
     disable --> sleep["Deep sleep"]
 
-    E -->|"No"| H{"Enough Wi-Fi APs?"}
+    E -->|"No"| H{"Enough WiFi APs?"}
 
     H -->|"Yes"| I["Collect BSSID + RSSI"]
     I --> encrypt[Encrypt data]
