@@ -17,7 +17,7 @@ flowchart TD
     E -->|"No"| H{"Enough WiFi APs?"}
 
     H -->|"Yes"| I["Collect BSSID + RSSI"]
-    I --> encrypt[Encrypt data]
+    I --> encrypt[Obfuscate data]
     encrypt --> send["Send cellular data"]
     send --> disable
 

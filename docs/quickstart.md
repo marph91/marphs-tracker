@@ -27,5 +27,5 @@
 
 1. Adapt the [configuration file](../firmware/config.py) according to your needs.
 2. Install [esptool](https://github.com/espressif/esptool) and flash the [LilyGo MicroPython firmware](https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G-MicroPython/tree/377b15a71fde63463ef67a450856571dc5516a8a/firmware) from their repo.
-3. Upload the scripts at ./firmware
+3. Upload the [firmware](../firmware/) with [flash_firmware.bash](../flash_firmware.bash)
 4. Reboot

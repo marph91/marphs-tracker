@@ -20,4 +20,10 @@
 | Full cycle — WiFi + data   |       — |     ~17 s active | ~0.47 mAh + sleep |
 | Full cycle — GNSS + data   |       — |     ~47 s active | ~1.91 mAh + sleep |
 
-Worst case with 3450 mAh 18650 battery and 24 GNSS + data cycles a day + sleep: 47 days.
+Assuming a 3450 mAh battery:
+
+| Mode       | Interval | Expected cycles/day | Estimated battery life |
+| ---------- | -------: | ------------------: | ---------------------: |
+| Home       |   30 min |                  48 |               ~23 days |
+| Away, WiFi |   10 min |                 144 |                ~8 days |
+| Away, GNSS |   10 min |                 144 |                ~8 days |

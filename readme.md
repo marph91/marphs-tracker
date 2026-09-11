@@ -1,5 +1,9 @@
 [![tests](https://github.com/marph91/marphs-tracker/actions/workflows/tests.yml/badge.svg)](https://github.com/marph91/marphs-tracker/actions/workflows/tests.yml)
 
+# Marph's Tracker
+
+A small, battery-powered Wi-Fi/GNSS tracker based on the LilyGO T-SIM7080G-S3 and MicroPython.
+
 ## Motivation
 
 I want a thief protection for our new stroller.
@@ -13,6 +17,15 @@ Requirements:
 
 ## Overview
 
+- Hardware:
+  - LILYGO T-SIM7080G-S3 including GNSS and LTE antenna
+  - 18650 battery
+  - IoT SIM card
+- Location methods:
+  - WiFi (+ cell data) -> [BeaconDB](https://beacondb.net/)
+  - GNSS
+- Cellular connectivity: LTE-M or NB-IoT
+
 The tracker obtains the location based on GNSS or WIFI. This data is sent to a configurable URL. In my case, this is a NTFY instance. A custom script subscribes to the NTFY instance, converts the data and forwards it to a self-hosted Traccar server in my home lab.
 
 Please check the [documentation](./docs/) for setup instructions and further details:
@@ -22,6 +35,8 @@ Please check the [documentation](./docs/) for setup instructions and further det
 - [Battery life estimation](./docs/battery.md)
 - [Cost estimation](./docs/costs.md)
 - [Search for a good LTE-M or NB-IoT SIM card](./docs/cellular_data.md)
+
+## Example Deployment
 
 ```mermaid
 flowchart LR
