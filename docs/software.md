@@ -32,7 +32,7 @@ flowchart TD
 
 #### C/C++ or MicroPython?
 
-There are example repos for both, [C/C++](github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G) and [MicroPython](github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G-MicroPython). I chose MicroPython, because it feels much better for me.
+There are example repos for both, [C/C++](https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G) and [MicroPython](https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G-MicroPython). I chose MicroPython, because it feels much better for me.
 
 ### At the server
 

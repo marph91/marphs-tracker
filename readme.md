@@ -6,7 +6,7 @@ A small, battery-powered Wi-Fi/GNSS tracker based on the LilyGO T-SIM7080G-S3 an
 
 ## Motivation
 
-I want a thief protection for our new stroller.
+I want a theft protection for our new stroller.
 
 Requirements:
 
@@ -92,13 +92,15 @@ flowchart LR
 
 ## Abbreviations
 
-| Abbreviation   | Description                                                         |
-| -------------- | ------------------------------------------------------------------- |
-| AP             | Access Point. I.e. a WiFi network.                                  |
-| BSSID          | Basic Service Set Identification. I.e. the MAC address of the WiFi. |
-| GNSS           | Global Navigation Satellite System. For example GPS or Galileo.     |
-| LTE-M / NB-IoT | Narrowband Cellular Standards for mobile data.                      |
-| SSID           | Service Set Identifier. I.e. the name of the WiFi.                  |
+| Abbreviation   | Description                                                               |
+| -------------- | ------------------------------------------------------------------------- |
+| AP             | Access Point. I.e. a WiFi network.                                        |
+| APN            | Access Point Name. Gateway for the cellular data.                         |
+| BSSID          | Basic Service Set Identification. I.e. the MAC address of the WiFi.       |
+| GNSS           | Global Navigation Satellite System. For example GPS or Galileo.           |
+| LTE-M / NB-IoT | Narrowband Cellular Standards for mobile data.                            |
+| RSSI           | Received Signal Strength Indicator. I.e. the strength of the WiFi signal. |
+| SSID           | Service Set Identifier. I.e. the name of the WiFi.                        |
 
 ## Code structure
 

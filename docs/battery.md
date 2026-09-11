@@ -24,6 +24,6 @@ Assuming a 3450 mAh battery:
 
 | Mode       | Interval | Expected cycles/day | Estimated battery life |
 | ---------- | -------: | ------------------: | ---------------------: |
-| Home       |   30 min |                  48 |               ~23 days |
-| Away, WiFi |   10 min |                 144 |                ~8 days |
-| Away, GNSS |   10 min |                 144 |                ~8 days |
+| Home       |   30 min |                  48 |              ~101 days |
+| Away, WiFi |   10 min |                 144 |               ~37 days |
+| Away, GNSS |   10 min |                 144 |               ~25 days |
