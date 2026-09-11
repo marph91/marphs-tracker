@@ -24,7 +24,6 @@ WiFi path:
 
 ```json
 {
-  "source": "wifi",
   "wifiAccessPoints": [
     { "macAddress": "aa:bb:cc:dd:ee:ff", "signalStrength": -51 }
   ]
@@ -34,7 +33,7 @@ WiFi path:
 GNSS path:
 
 ```json
-{ "source": "gnss", "lat": 48.137154, "lon": 11.576124 }
+{ "gnss": { "lat": 48.137154, "lon": 11.576124 } }
 ```
 
 ## Flashing

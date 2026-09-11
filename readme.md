@@ -1,65 +1,85 @@
-## Hardware
+[![tests](https://github.com/marph91/marphs-tracker/actions/workflows/tests.yml/badge.svg)](https://github.com/marph91/marphs-tracker/actions/workflows/tests.yml)
 
-- [T-SIM7080G S3](https://www.amazon.de/dp/B0BW3NN54L/)
-- IOT SIM
-- Battery
+## Overview
 
-## Software
+The tracker obtains the location based on GNSS or WIFI. This data is sent to a configurable URL. In my case, this is a NTFY instance. A custom script subscribes to the NTFY instance, converts the data and forwards it to a self-hosted Traccar server in my home lab.
 
-- SW on device
-- ntfy server
-- ntfy to traccar script
-- Selfhosted traccar instance
-
-## Repository Structure
-
-- ntfy_traccar_bridge
-- tracker_firmware, based on the [lilygo examples](https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/)
-
-# TODO
-
-- [ ] [Battery](https://www.idealo.de/preisvergleich/Liste/111758360/18650-mit-schutzschaltung.html)
-  - https://www.idealo.de/preisvergleich/OffersOfProduct/202736142_-inr18650-35e-3500mah-3-6v-samsung.html
-  - https://www.idealo.de/preisvergleich/OffersOfProduct/206289328_-inr18650-m35a-3500mah-molicel.html
-- [ ] [IOT SIM](https://www.idealo.de/preisvergleich/MainSearchProductCategory.html?q=iot+sim)
-  - https://simbase.com/de/best-iot-sim-card/germany
-  - https://shop.dptechnics.com/home/1-250mb-worldwide-m2m-sim.html
-- [ ] Selfprinted case
-
----
-
-- https://www.simcom.com/product/SIM7080G.html
-- AT command cheat sheet: https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/blob/master/datasheet/SIM7070_SIM7080_SIM7090%20Series_AT%20Command%20Manual_V1.05.pdf
-
-##
-
-- AES ECB: https://www.luisllamas.es/en/how-to-use-aes128-on-esp32/#extra-bonus-ecb-encryption
-- WiFi.h: https://github.com/espressif/arduino-esp32/blob/master/libraries/WiFi/src/WiFi.h
+Please check the [documentation](./docs/) for setup instructions and further details.
 
 ```mermaid
-flowchart TD
-    sleep -->|"60 min timer"| wake["Wake ESP32-S3"]
+flowchart LR
 
-    wake --> enable_wifi["Enable Wi-Fi"]
-    enable_wifi --> scan_wifi["Scan nearby Wi-Fi"]
+    %% =========================================================
+    %% DEVICE
+    %% =========================================================
+    subgraph DEVICE["📍 LILYGO T-SIM7080G"]
+        direction TB
 
-    scan_wifi --> E{"Home Wi-Fi detected?"}
+        TRACKER["Tracker"] --> WIFI_PATH["📶 Wi-Fi path"]
 
-    E -->|"Yes"| disable["Disable Everything"]
-    disable --> sleep["Deep sleep"]
+        WIFI_PATH -->|"Configured home SSID detected"| DONE["Cycle finished"]
+        WIFI_PATH -->|"Enough APs detected"| CELLULAR["LTE-M / NB-IoT"]
+        WIFI_PATH -->|"Too few APs"| GNSS_PATH["🛰️ GNSS path"]
 
-    E -->|"No"| H{"Enough Wi-Fi APs?"}
+        GNSS_PATH -->|"Fix"| CELLULAR
+        GNSS_PATH -->|"No fix"| DONE
+    end
 
-    H -->|"Yes"| I["Collect BSSID + RSSI"]
-    I --> encrypt[Encrypt data]
-    encrypt --> send["Send data via NB-IoT"]
-    send --> disable
 
-    H -->|"No"| L["Enable GNSS"]
-    L --> M["Get GPS fix"]
-    M --> N["Read latitude + longitude"]
-    N --> O["Disable GNSS"]
-    O --> encrypt
+    %% =========================================================
+    %% PUBLIC NETWORK
+    %% =========================================================
+    subgraph PUBLIC["🌐 PUBLIC NETWORK"]
+        NTFY["ntfy"]
+        BEACON["BeaconDB\nWi-Fi geolocation"]
+    end
+
+
+    %% =========================================================
+    %% HOME NETWORK
+    %% =========================================================
+    subgraph HOME["🏠 HOME NETWORK"]
+        CONVERTER["Message Converter"]
+        TRACCAR["Traccar Server"]
+    end
+
+
+    %% =========================================================
+    %% CONNECTIONS
+    %% =========================================================
+
+    CELLULAR -->|"Publish"| NTFY
+
+    NTFY -->|"Subscribe"| CONVERTER
+
+    CONVERTER -->|"Wi-Fi AP lookup"| BEACON
+    BEACON -->|"Location"| CONVERTER
+
+    CONVERTER -->|"HTTP Request in OsmAnd format"| TRACCAR
 ```
 
-One important detail: use the BSSID (MAC address) of your home access point, rather than just the SSID. The SSID can be duplicated by other networks, whereas the BSSID identifies your specific AP.
+## Abbreviations
+
+| Abbreviation   | Description                                                         |
+| -------------- | ------------------------------------------------------------------- |
+| AP             | Access Point. I.e. a WiFi.                                          |
+| BSSID          | Basic Service Set Identification. I.e. the MAC address of the WiFi. |
+| GNSS           | Global Navigation Satellite System. For example GPS or Galileo.     |
+| LTE-M / NB-IoT | Narrowband Cellular Standards for mobile data.                      |
+| SSID           | Service Set Identifier. I.e. the name of the WiFi.                  |
+
+## Code structure
+
+| File/Folder         | Content                                                            |
+| ------------------- | ------------------------------------------------------------------ |
+| .github/workflows   | Github CI                                                          |
+| docs                | Documentation                                                      |
+| firmware            | Firmware running on the device                                     |
+| ntfy_traccar_bridge | Bridge scripts running on the server at a machine in local network |
+| flash_firmware.bash | Flash the firmware to the device                                   |
+
+## Similar projects
+
+- https://github.com/eaxsi/sim7000-tracker
+- https://github.com/onlinegill/LILYGO-TTGO-T-SIM7000G-ESP32-Traccar-GPS-tracker
+- https://github.com/Wovyn/lilygo-t-sim7000g-asset-tracker-example

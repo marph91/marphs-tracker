@@ -4,4 +4,7 @@ __pycache__
 .ruff_cache
 .vscode
 bin
+errors
 **/log/*.csv
+SIM7070_SIM7080_SIM7090 Series_AT Command Manual_V1.05.pdf
+tmp*.txt

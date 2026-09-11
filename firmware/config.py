@@ -8,7 +8,7 @@ except ImportError:
     const = lambda x: x
 
 # Time between tracking attempts. Affects power consumption and data usage.
-SLEEP_MINUTES_HOME = const(60)  # sleep for a longer time when home
+SLEEP_MINUTES_HOME = const(30)  # sleep for a longer time when home
 SLEEP_MINUTES_AWAY = const(10)  # track more often when away
 
 # SSID of your home Wi-Fis.
