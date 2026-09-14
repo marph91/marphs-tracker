@@ -123,7 +123,8 @@ class GnssReader:
         return "OK" in response
 
     def disable(self):
-        response = self.modem.send_at("AT+CGNSPWR=0", wait=2, await_all=["OK"])
+        # it's ok to fail if the gps is off already
+        response = self.modem.send_at("AT+CGNSPWR=0")
         self.pmu.disable_gnss_antenna()
         return "OK" in response
 

@@ -61,6 +61,8 @@ def run_cycle(config, hw_functions):
         try:
             hw_functions["gnss"].config()
             gnss_fix = hw_functions["gnss"].get_fix(config.GNSS_FIX_TIMEOUT_S)
+        except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
+            LOG(f"{exc}")
         finally:
             hw_functions["gnss"].disable()
 
