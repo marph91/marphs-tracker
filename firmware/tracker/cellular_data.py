@@ -200,6 +200,13 @@ class CellularDataClient:
         self.modem.send_at(f"AT+CACLOSE={conn_id}", await_any=["OK", "ERROR"])
         self.modem.send_at(f"AT+CACID={conn_id}", await_all=["OK"])
 
+        # # debug: ping quad9 server before SSL layer
+        # # AT+SNPING4=<URL>,<count>,<size>,<timeout>
+        # self.modem.send_at(
+        #     'AT+SNPING4="9.9.9.9",1,16,5000', wait=5, await_all=["SNPING4:", "OK"]
+        # )
+        # LOG("ping successful")
+
         if secure:
             # <sslversion>
             # 0 QAPI_NET_SSL_PROTOCOL_UNKNOWN
@@ -235,6 +242,11 @@ class CellularDataClient:
         # timezone is in quarters - for example 08 means 2 hours offset
         response = self.modem.send_at("AT+CCLK?", await_all=["OK"])
         LOG("CCLK - Clock: {}".format(get_line(response, "+CCLK:")))
+        if "80/01/06" in response:
+            # TODO: NTP?
+            approximate_time = "26/09/14,00:00:00+00"
+            LOG(f"Modem time is wrong. Trying with {approximate_time=}.")
+            self.modem.send_at(f'AT+CCLK="{approximate_time}"', await_all=["OK"])
 
         # <result>
         # 0 Success
