@@ -338,11 +338,16 @@ class CellularDataClient:
             raise CellularDataError("no HTTP response received")
 
         self.modem.send_at(
-            f"AT+CARECV={conn_id},{received_bytes}",
-            wait=5,
-            await_all=["HTTP/1.1 200", "OK"],
+            f"AT+CARECV={conn_id},{received_bytes}", wait=5, await_all=["HTTP/1.1 200"]
         )
-        self.modem.send_at(f"AT+CACLOSE={conn_id}", await_all=["OK"])
+
+        # TODO: The modem can only read 1460 bytes at a time.
+        # Read everything properly instead only the first chunk.
+        # response = self.modem.send_at("AT+CARECV?")
+        # LOG(f"{response=}")
+
+        # TODO: await_all=["OK"] fails sometimes. Probably because of the previous command.
+        self.modem.send_at(f"AT+CACLOSE={conn_id}")
 
     def disconnect(self):
         # it's ok to fail if the network is deactivated already
