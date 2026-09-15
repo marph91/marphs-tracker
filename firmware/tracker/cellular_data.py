@@ -187,8 +187,13 @@ class CellularDataClient:
         # enrich the wifi data with cell data for better localization
         if "wifiAccessPoints" in payload:
             LOG("enrich wifi payload with cell data")
-            response = self.modem.send_at("AT+CPSI?", await_all=["OK"])
-            payload["cellTowers"] = [parse_cell_data(response)]
+            try:
+                response = self.modem.send_at("AT+CPSI?", await_all=["OK"])
+                payload["cellTowers"] = [parse_cell_data(response)]
+            except Exception as exc:  # noqa: BLE001
+                # want to catch all exceptions
+                # not nice, but ok if this fails
+                LOG(f"{exc}")
 
         LOG("post json payload")
         LOG(payload)
