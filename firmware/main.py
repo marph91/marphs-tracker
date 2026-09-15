@@ -20,12 +20,10 @@ def sleep(time_ms, pmu, modem):
     # - https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G-MicroPython/blob/377b15a71fde63463ef67a450856571dc5516a8a/examples/MinimalModemAndEspSleep/MinimalModemAndEspSleep.py
     # - https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/issues/168
 
-    # This is not necessary, since the MicroPico VSCode extension opens always
-    # the prompt instead of executing main.py.
-    if pmu.is_usb_connected():
+    if pmu.get_battery_percent() == -1:
         # prevent boot loop to allow debugging
         # stop the script with ctrl+c
-        LOG("Don't go to sleep, since USB is connected.")
+        LOG("Don't go to sleep, since the battery is not connected.")
         return
 
     modem.power_off()
