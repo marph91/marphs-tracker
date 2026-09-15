@@ -270,9 +270,15 @@ class CellularDataClient:
         # 25 Certificate’s common name does not match
         # 26 Certificate’s common name does not match and time expired
         # 27 Connect failed
+        #
+        # <recv_mode>
+        # 0 The received data can only be read manually using AT+CARECV=<cid>
+        # 1 After receiving the data, it will automatically report URC:
+        #   +CAURC: "recv",<id>,<length>[,<remoteIP>,<remote_port>]<CR><LF><data>
+        recv_mode = 0
         try:
             response = self.modem.send_at(
-                f'AT+CAOPEN={conn_id},0,"TCP","{host}",{port}',
+                f'AT+CAOPEN={conn_id},0,"TCP","{host}",{port},{recv_mode}',
                 wait=30,  # TinyGSM waits for 75 s by default
                 # async - CAOPEN can arrive before OK
                 await_all=[f"+CAOPEN: {conn_id},", "OK"],
@@ -320,8 +326,12 @@ class CellularDataClient:
         self._send_http_chunk(conn_id, body)
         LOG("HTTP body sent")
 
+        # It's not possible to receive the full response, since there are buffer limitations:
+        # https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/issues/148
+        # Just receive as much as possible.
         deadline = time.ticks_add(time.ticks_ms(), 20000)
-        received_bytes = 0
+        total_received_bytes = 0
+        received_response = ""
         while time.ticks_diff(deadline, time.ticks_ms()) > 0:
             response = self.modem.send_at("AT+CARECV?")
             LOG(
@@ -333,26 +343,26 @@ class CellularDataClient:
             if match:
                 received_bytes = int(match.group(1))
                 if received_bytes > 0:
-                    LOG("CARECV bytes received")
-                    break
-            # response = self.modem.send_at("AT+CASTATE?")
-            # LOG(f"CASTATE {response=}")
+                    total_received_bytes += received_bytes
 
-        if received_bytes <= 0:
-            LOG(f"{response=}")
+                    # get the received bytes from modem
+                    received_response += self.modem.send_at(
+                        f"AT+CARECV={conn_id},{received_bytes}"
+                    )
+                elif total_received_bytes > 0:
+                    break  # received all bytes already
+            elif total_received_bytes > 0:
+                break  # received all bytes already
+
+        if total_received_bytes <= 0:
+            LOG(f"{received_response=}")
             raise CellularDataError("no HTTP response received")
 
-        self.modem.send_at(
-            f"AT+CARECV={conn_id},{received_bytes}", wait=5, await_all=["HTTP/1.1 200"]
-        )
+        if not "HTTP/1.1 200" in received_response:
+            LOG(f"{received_response=}")
+            raise CellularDataError("no HTTP 200 response received")
 
-        # TODO: The modem can only read 1460 bytes at a time.
-        # Read everything properly instead only the first chunk.
-        # response = self.modem.send_at("AT+CARECV?")
-        # LOG(f"{response=}")
-
-        # TODO: await_all=["OK"] fails sometimes. Probably because of the previous command.
-        self.modem.send_at(f"AT+CACLOSE={conn_id}")
+        self.modem.send_at(f"AT+CACLOSE={conn_id}", await_all=["OK"])
 
     def disconnect(self):
         # it's ok to fail if the network is deactivated already

@@ -94,7 +94,7 @@ class AtModem:
         response = self.uart.read()
         if not response:
             return ""
-        # LOG(f"<<< (final) {response.decode('utf-8', 'ignore')!r}")
+        # LOG(f"<<< (wait timeout) {response.decode('utf-8', 'ignore')!r}")
         return response.decode("utf-8", "ignore")
 
     def power_on(self):
