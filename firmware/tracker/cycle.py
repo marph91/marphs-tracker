@@ -39,6 +39,7 @@ def run_cycle(config, hw_functions):
     if home_ssid_present(results, config.HOME_SSIDS):
         return CycleState.HOME
 
+    hw_functions["pmu"].enable_modem()
     if not hw_functions["modem"].power_on():
         return CycleState.MODEM_POWER_ON_FAILED
 
@@ -55,6 +56,7 @@ def run_cycle(config, hw_functions):
         LOG(f"using wifi path with {len(access_points)} APs")
     else:
         LOG(f"fewer than {config.WIFI_MIN_APS} APs, using GNSS path")
+        hw_functions["pmu"].enable_gnss_antenna()
         if not hw_functions["gnss"].enable():
             return CycleState.NO_FIX
 

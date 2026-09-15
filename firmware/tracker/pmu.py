@@ -33,9 +33,6 @@ class PmuController:
         self._pmu.setBLDO1Voltage(3000)
         self._pmu.enableBLDO1()
 
-        self.enable_modem()
-        self.enable_gnss_antenna()
-
         self._pmu.disableTSPinMeasure()
         self._initialized = True
         return True
