@@ -90,6 +90,7 @@ def main():
         "cellular_data": CellularDataClient(modem, config),
     }
 
+    cycle_state = CycleState.NONE
     start_time_ms = time.ticks_ms()
     try:
         cycle_state = run_cycle(config, hw_functions)

@@ -10,6 +10,7 @@ LOG = logger.Logger(__name__)
 # TODO: replace with enum when available:
 # https://github.com/micropython/micropython/issues/8545
 class CycleState:
+    NONE = "NONE"
     PMU_INIT_FAILED = "PMU_INIT_FAILED"
     HOME = "HOME"
     MODEM_POWER_ON_FAILED = "MODEM_POWER_ON_FAILED"
