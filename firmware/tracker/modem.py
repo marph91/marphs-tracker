@@ -104,15 +104,16 @@ class AtModem:
         LOG("Power on")
         retry = 0
         while retry <= 10:
-            if self.send_at("AT"):
+            try:
                 response = self.send_at("AT+CGMR", await_all=["OK"])
                 LOG(
                     f"CGMR - TA Revision Identification of Software Release: {response.splitlines()[2]}"
                 )
                 self._started = True
                 return True
-            retry += 1
-            LOG(f"{retry=}")
+            except (IndexError, ModemError) as exc:
+                LOG(f"{retry=} - {exc}")
+                retry += 1
             if retry > 10:
                 self._pwr.value(0)
                 time.sleep(0.1)
