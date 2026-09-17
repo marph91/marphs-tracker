@@ -36,6 +36,10 @@ def run_cycle(config, hw_functions):
     # WiFi scan runs before modem power-on so home detection avoids cellular data.
     results = hw_functions["scan_wifi"]()
 
+    battery_percent = hw_functions["pmu"].get_battery_percent()
+    if battery_percent != -1:
+        LOG(f"{battery_percent=}")
+
     if home_ssid_present(results, config.HOME_SSIDS):
         return CycleState.HOME
 
@@ -46,7 +50,7 @@ def run_cycle(config, hw_functions):
     if not hw_functions["modem"].check_sim():
         return CycleState.SIM_NOT_READY
 
-    payload = {"batt": hw_functions["pmu"].get_battery_percent()}
+    payload = {"batt": battery_percent}
     # TODO: Include timestamp here already?
     # seconds_since_2000 = hw_functions["modem"].get_time()
 
@@ -65,6 +69,7 @@ def run_cycle(config, hw_functions):
             gnss_fix = hw_functions["gnss"].get_fix(config.GNSS_FIX_TIMEOUT_S)
         except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
             LOG(f"{exc}")
+            return CycleState.NO_FIX
         finally:
             hw_functions["gnss"].disable()
 

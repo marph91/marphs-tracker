@@ -15,16 +15,10 @@ from tracker.wifi_scan import scan_wifi
 LOG = logger.Logger(__name__.strip("_"))
 
 
-def sleep(time_ms, pmu, modem):
+def prepare_for_sleep(pmu, modem):
     # based on:
     # - https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G-MicroPython/blob/377b15a71fde63463ef67a450856571dc5516a8a/examples/MinimalModemAndEspSleep/MinimalModemAndEspSleep.py
     # - https://github.com/Xinyuan-LilyGO/LilyGo-T-SIM7080G/issues/168
-
-    if pmu.get_battery_percent() == -1:
-        # prevent boot loop to allow debugging
-        # stop the script with ctrl+c
-        LOG("Don't go to sleep, since the battery is not connected.")
-        return
 
     modem.power_off()
     pmu.power_down_for_sleep()
@@ -82,12 +76,6 @@ def sleep(time_ms, pmu, modem):
     # UART2/NFC is not used here.
     # uart2.deinit()
 
-    # -------------------------------------------------------------
-    # ESP32 deep sleep
-    # -------------------------------------------------------------
-    LOG(f"Going to sleep for {time_ms / 1000} seconds")
-    machine.deepsleep(time_ms)
-
 
 def main():
     LOG("Starting main script")
@@ -103,18 +91,32 @@ def main():
     }
 
     start_time_ms = time.ticks_ms()
-    cycle_state = run_cycle(config, hw_functions)
+    try:
+        cycle_state = run_cycle(config, hw_functions)
+        LOG(f"{cycle_state=}")
+    except Exception as exc:  # noqa: BLE001  # want to catch all remaining exceptions
+        LOG("Cycle failed. TODO: catch this exception:")
+        LOG(f"{exc}")
     elapsed_time_ms = time.ticks_diff(time.ticks_ms(), start_time_ms)
-    LOG(f"{cycle_state=}")
     LOG(f"Cycle time: {elapsed_time_ms / 1000} s")
 
-    # sleep some time depending on the state
-    sleep_minutes = (
-        config.SLEEP_MINUTES_HOME
-        if cycle_state == CycleState.HOME
-        else config.SLEEP_MINUTES_AWAY
-    )
-    sleep(int(sleep_minutes) * 60 * 1000, pmu, modem)
+    try:
+        prepare_for_sleep(pmu, modem)
+    finally:
+        if pmu.get_battery_percent() == -1:
+            # prevent boot loop to allow debugging
+            # stop the script with ctrl+c
+            LOG("Don't go to sleep, since the battery is not connected.")
+        else:
+            # sleep some time depending on the state
+            sleep_minutes = (
+                config.SLEEP_MINUTES_HOME
+                if cycle_state == CycleState.HOME
+                else config.SLEEP_MINUTES_AWAY
+            )
+            sleep_ms = int(sleep_minutes) * 60 * 1000
+            LOG(f"Going to sleep for {sleep_ms / 1000} seconds")
+            machine.deepsleep(sleep_ms)
 
 
 if __name__ == "__main__":
