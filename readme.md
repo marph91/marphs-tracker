@@ -15,6 +15,14 @@ Requirements:
 - Can send from any location to a configurable endpoint
 - Without vendor-lock (no app/registration)
 
+## Images
+
+|                         Tracker Assembled                         |                             Tracker in Case                             |
+| :---------------------------------------------------------------: | :---------------------------------------------------------------------: |
+|  ![Tracker assembled](./docs/images/IMG_20260913_132051_696.jpg)  |      ![Tracker in case](./docs/images/IMG_20260913_132009_885.jpg)      |
+|                      **Tracker in Stroller**                      |           **Tracker in [Traccar](https://www.traccar.org/)**            |
+| ![Tracker in stroller](./docs/images/IMG_20260913_132307_892.jpg) | ![Tracker in traccar](./docs/images/Bildschirmfoto_20260917_181152.png) |
+
 ## Overview
 
 - Hardware:
