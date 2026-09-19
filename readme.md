@@ -57,13 +57,14 @@ flowchart LR
 
         TRACKER["Tracker"] --> WIFI_PATH["📶 WiFi path"]
 
-        WIFI_PATH -->|"Configured home SSID detected - no WiFi password"| DONE["Cycle finished"]
-        WIFI_PATH -->|"Configured home SSID detected - WiFi password set - heartbeat"| WIFI["WiFi"]
+        WIFI_PATH -->|"Configured home SSID detected"| WIFI_PASSWORD["WiFi password set?"]
+        WIFI_PASSWORD -->|"No"| DONE["Cycle finished"]
+        WIFI_PASSWORD -->|"Yes -> heartbeat"| WIFI["WiFi"]
         WIFI_PATH -->|"Enough APs detected"| CELLULAR["LTE-M / NB-IoT"]
         WIFI_PATH -->|"Too few APs"| GNSS_PATH["🛰️ GNSS path"]
 
-        GNSS_PATH -->|"Fix"| CELLULAR
-        GNSS_PATH -->|"No fix - WiFi fallback or heartbeat"| CELLULAR
+        GNSS_PATH -->|"Fix -> Location"| CELLULAR
+        GNSS_PATH -->|"No fix -> WiFi fallback or heartbeat"| CELLULAR
     end
 
 
