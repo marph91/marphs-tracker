@@ -17,6 +17,10 @@ SLEEP_MINUTES_AWAY = const(10)  # track more often when away
 # transmit any tracking data.
 HOME_SSIDS = const(("YourHomeWifiSSID", "SecondHomeSSID"))
 
+# Passwords of the home WiFis. Have to correspond to "HOME_SSIDS".
+# If the password is set, a "heartbeat" (only battery level) is sent when in home WiFi.
+HOME_PASSWORDS = const((None, None))
+
 # HTTP endpoint receiving the payload from the device.
 TARGET_URL = const("https://httpbin.org/post")
 # encryption parameters for the data

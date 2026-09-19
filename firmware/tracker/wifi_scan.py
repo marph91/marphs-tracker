@@ -1,6 +1,10 @@
 """WiFi scan helpers and device scan wrapper."""
 
 import logger
+import machine
+import requests
+
+from tracker.payload import obfuscate_payload, serialize_payload
 
 try:
     # micropython
@@ -44,7 +48,7 @@ def home_ssid_present(results, home_ssids):
     for ap in results:
         if ap["ssid"] in home_ssids:
             LOG("home SSID detected")
-            return True
+            return ap["ssid"]
     return False
 
 
@@ -68,3 +72,29 @@ def scan_wifi():
     scan_results = normalize_scan_results(raw)
     LOG(f"scan found {len(scan_results)} APs")
     return scan_results
+
+
+def send_heartbeat(ssid, password, url, battery_level):
+    try:
+        wlan = network.WLAN(network.STA_IF)
+        wlan.active(True)  # TODO: harmonize with "scan_wifi"
+        if not wlan.isconnected():
+            LOG(f'connecting to network "{ssid}"')
+            wlan.connect(ssid, password)
+            while not wlan.isconnected():
+                machine.idle()
+            LOG("connected to network")
+
+        LOG("send heartbeat")
+        payload = {"batt": battery_level}
+        response = requests.post(
+            url, data=obfuscate_payload(serialize_payload(payload)).encode("utf-8")
+        )
+        if 200 <= response.status_code <= 299:
+            LOG("heartbeat sent successfully")
+        else:
+            LOG(f"heartbeat failed - HTTP status code: {response.status_code}")
+    except Exception as exc:  # noqa: BLE001  # want to catch all remaining exceptions
+        LOG(f"{exc}")
+    finally:
+        wlan.active(False)

@@ -10,7 +10,7 @@ from tracker.cycle import CycleState, run_cycle
 from tracker.gnss import GnssReader
 from tracker.modem import AtModem
 from tracker.pmu import PmuController
-from tracker.wifi_scan import scan_wifi
+from tracker.wifi_scan import scan_wifi, send_heartbeat
 
 LOG = logger.Logger(__name__.strip("_"))
 
@@ -24,6 +24,7 @@ def main():
         "pmu": pmu,
         "modem": modem,
         "scan_wifi": scan_wifi,
+        "send_heartbeat": send_heartbeat,
         "gnss": GnssReader(pmu, modem),
         "cellular_data": CellularDataClient(modem, config),
     }

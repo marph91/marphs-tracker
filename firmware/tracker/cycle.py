@@ -104,7 +104,14 @@ def run_cycle(config, hw_functions):
     if battery_percent != -1:
         LOG(f"{battery_percent=}")
 
-    if home_ssid_present(results, config.HOME_SSIDS):
+    home_ssid = home_ssid_present(results, config.HOME_SSIDS)
+    if home_ssid:
+        # send heartbeat if configured
+        home_password = config.HOME_PASSWORDS[config.HOME_SSIDS.index(home_ssid)]
+        if home_password:
+            hw_functions["send_heartbeat"](
+                home_ssid, home_password, config.TARGET_URL, battery_percent
+            )
         return CycleState.HOME
 
     hw_functions["pmu"].enable_modem()
