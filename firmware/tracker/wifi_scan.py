@@ -1,17 +1,19 @@
 """WiFi scan helpers and device scan wrapper."""
 
 import logger
-import machine
 import requests
 
 from tracker.payload import obfuscate_payload, serialize_payload
 
 try:
     # micropython
+    import machine
     import network
 except ImportError:
     # python
-    network = None  # needed for unit testing on native device
+    # needed for unit testing on native device
+    machine = None
+    network = None
 
 
 LOG = logger.Logger(__name__)

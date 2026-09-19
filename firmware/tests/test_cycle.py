@@ -29,6 +29,7 @@ def hw_functions():
         "pmu": pmu,
         "modem": modem,
         "scan_wifi": Mock(return_value=_sample_results()),
+        "send_heartbeat": Mock(),
         "gnss": gnss,
         "cellular_data": Mock(),
         "log": Mock(),
