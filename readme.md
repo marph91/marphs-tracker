@@ -34,7 +34,7 @@ Requirements:
   - GNSS
 - Cellular connectivity: LTE-M or NB-IoT
 
-The tracker obtains the location based on GNSS or WIFI. This data is sent to a configurable URL. In my case, this is a NTFY instance. A custom script subscribes to the NTFY instance, converts the data and forwards it to a self-hosted Traccar server in my home lab.
+The tracker obtains the location based on GNSS or WIFI. This data is sent to a configurable URL. In my case, this is a ntfy instance. A custom script subscribes to the ntfy instance, converts the data and forwards it to a self-hosted Traccar server in my home lab.
 
 Please check the [documentation](./docs/) for setup instructions and further details:
 
@@ -57,12 +57,13 @@ flowchart LR
 
         TRACKER["Tracker"] --> WIFI_PATH["📶 WiFi path"]
 
-        WIFI_PATH -->|"Configured home SSID detected"| DONE["Cycle finished"]
+        WIFI_PATH -->|"Configured home SSID detected - no WiFi password"| DONE["Cycle finished"]
+        WIFI_PATH -->|"Configured home SSID detected - WiFi password set - heartbeat"| WIFI["WiFi"]
         WIFI_PATH -->|"Enough APs detected"| CELLULAR["LTE-M / NB-IoT"]
         WIFI_PATH -->|"Too few APs"| GNSS_PATH["🛰️ GNSS path"]
 
         GNSS_PATH -->|"Fix"| CELLULAR
-        GNSS_PATH -->|"No fix"| DONE
+        GNSS_PATH -->|"No fix - WiFi fallback or heartbeat"| CELLULAR
     end
 
 
@@ -88,6 +89,7 @@ flowchart LR
     %% CONNECTIONS
     %% =========================================================
 
+    WIFI -->|"Publish"| NTFY
     CELLULAR -->|"Publish"| NTFY
 
     NTFY -->|"Subscribe"| CONVERTER

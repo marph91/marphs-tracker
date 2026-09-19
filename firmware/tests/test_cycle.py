@@ -82,13 +82,15 @@ def test_gnss_path_disables_gnss_before_cellular_data(hw_functions):
     assert hw_functions["cellular_data"].post_json.call_count == 1
 
 
-def test_gnss_timeout_skips_post(hw_functions):
+def test_gnss_timeout_wifi_fallback(hw_functions):
     config = default_config
     hw_functions["scan_wifi"].return_value = _sample_results(config.WIFI_MIN_APS - 1)
 
     outcome = run_cycle(config, hw_functions)
-    assert outcome == CycleState.NO_FIX
-    hw_functions["cellular_data"].connect.assert_not_called()
+    assert outcome == CycleState.FINISHED
+    payload = hw_functions["cellular_data"].post_json.call_args[0][1]
+    assert "wifiAccessPoints" in payload
+    assert len(payload["wifiAccessPoints"]) == config.WIFI_MIN_APS - 1
 
 
 def test_post_failure_returns_post_failed(hw_functions):

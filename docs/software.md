@@ -21,13 +21,15 @@ flowchart TD
     encrypt --> send["Send cellular data"]
     send --> disable
 
-    H -->|"No"| L["Enable GNSS"]
-    L --> get_gnss_fix["Get gnss fix"]
+    H -->|"No"| get_gnss_fix["Get gnss fix"]
     get_gnss_fix --> gnss_timeout{"Timeout?"}
     gnss_timeout -->|"No"| read_gnss_data["Read latitude + longitude"]
-    gnss_timeout -->|"Yes"| disable_gnss
-    read_gnss_data --> disable_gnss["Disable GNSS"]
-    disable_gnss --> encrypt
+    gnss_timeout -->|"Yes"| wifi_fallback["WiFi fallback"]
+    wifi_fallback --> enough_wifi_aps{">1 WiFi APs?"}
+    enough_wifi_aps -->|"Yes"| encrypt
+    enough_wifi_aps -->|"No"| sleep
+
+    read_gnss_data --> encrypt
 ```
 
 #### C/C++ or MicroPython?

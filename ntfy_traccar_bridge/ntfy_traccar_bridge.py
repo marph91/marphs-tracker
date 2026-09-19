@@ -1,4 +1,4 @@
-"""Polls NTFY notifications from the NTFY server (in the web) and forwards them to the Traccar server (in the local network)."""
+"""Polls ntfy notifications from the ntfy server (in the web) and forwards them to the Traccar server (in the local network)."""
 
 import datetime as dt
 import json
@@ -138,7 +138,7 @@ def main():
     while True:
         try:
             resp = requests.get(firmware_config.TARGET_URL, stream=True)
-            for line in resp.iter_lines():
+            for line in resp.iter_lines():  # this blocks
                 if line:
                     message_converter.handle_ntfy_message(line)
         except Exception as exc:  # noqa: BLE001  # want to catch all exceptions

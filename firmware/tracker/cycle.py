@@ -15,9 +15,7 @@ class CycleState:
     HOME = "HOME"
     MODEM_POWER_ON_FAILED = "MODEM_POWER_ON_FAILED"
     SIM_NOT_READY = "SIM_NOT_READY"
-    NO_FIX = "NO_FIX"
     POST_FAILED = "POST_FAILED"
-    CONFIG_ERROR = "CONFIG_ERROR"
     SLEEP_PREPARATION_FAILED = "SLEEP_PREPARATION_FAILED"
     FINISHED = "FINISHED"
 
@@ -98,13 +96,13 @@ def run_cycle(config, hw_functions):
         return CycleState.PMU_INIT_FAILED
 
     # WiFi scan runs before modem power-on so home detection avoids cellular data.
-    results = hw_functions["scan_wifi"]()
+    wifi_aps = hw_functions["scan_wifi"]()
 
     battery_percent = hw_functions["pmu"].get_battery_percent()
     if battery_percent != -1:
         LOG(f"{battery_percent=}")
 
-    home_ssid = home_ssid_present(results, config.HOME_SSIDS)
+    home_ssid = home_ssid_present(wifi_aps, config.HOME_SSIDS)
     if home_ssid:
         # send heartbeat if configured
         home_password = config.HOME_PASSWORDS[config.HOME_SSIDS.index(home_ssid)]
@@ -125,36 +123,39 @@ def run_cycle(config, hw_functions):
     # TODO: Include timestamp here already?
     # seconds_since_2000 = hw_functions["modem"].get_time()
 
-    if len(results) >= config.WIFI_MIN_APS:
-        access_points = top_aps(results, config.WIFI_TOP_N)
+    if len(wifi_aps) >= config.WIFI_MIN_APS:
+        access_points = top_aps(wifi_aps, config.WIFI_TOP_N)
         payload["wifiAccessPoints"] = list(access_points)
         LOG(f"using wifi path with {len(access_points)} APs")
     else:
         LOG(f"fewer than {config.WIFI_MIN_APS} APs, using GNSS path")
-        hw_functions["pmu"].enable_gnss_antenna()
-        if not hw_functions["gnss"].enable():
-            return CycleState.NO_FIX
 
+        gnss_fix = None
         try:
+            hw_functions["pmu"].enable_gnss_antenna()
+            hw_functions["gnss"].enable()
             hw_functions["gnss"].config()
             gnss_fix = hw_functions["gnss"].get_fix(config.GNSS_FIX_TIMEOUT_S)
         except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
             LOG(f"{exc}")
-            return CycleState.NO_FIX
         finally:
             hw_functions["gnss"].disable()
 
-        if not gnss_fix:
-            return CycleState.NO_FIX
-
-        payload["gnss"] = gnss_fix
+        if gnss_fix:
+            payload["gnss"] = gnss_fix
+        elif wifi_aps:
+            access_points = top_aps(wifi_aps, config.WIFI_TOP_N)
+            payload["wifiAccessPoints"] = list(access_points)
+            LOG(f"No GNSS fix. Fall back to wifi path with {len(access_points)} APs")
+        else:
+            LOG("No GNSS fix. No WiFi APs. Just send heartbeat.")
 
     try:
         hw_functions["cellular_data"].connect()
         hw_functions["cellular_data"].post_json(config.TARGET_URL, payload)
     except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
         LOG(f"{exc}")
-        return CycleState.POST_FAILED if payload else CycleState.CONFIG_ERROR
+        return CycleState.POST_FAILED
     finally:
         hw_functions["cellular_data"].disconnect()
 

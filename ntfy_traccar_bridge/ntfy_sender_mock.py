@@ -1,4 +1,4 @@
-"""Sends requests with the correct layout, but random data to the NTFY server. Mocks the location tracker device"""
+"""Sends requests with the correct layout, but random data to the ntfy server. Mocks the location tracker device"""
 
 import json
 import pathlib

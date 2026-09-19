@@ -9,7 +9,7 @@ except ImportError:
 
 # Time between tracking attempts. Affects power consumption and data usage.
 SLEEP_MINUTES_HOME = const(30)  # sleep for a longer time when home
-SLEEP_MINUTES_AWAY = const(10)  # track more often when away
+SLEEP_MINUTES_AWAY = const(5)  # track more often when away
 
 # SSID of your home WiFis.
 # If any of these SSIDs are detected during the WiFi scan,
