@@ -6,7 +6,7 @@ import config
 import logger
 import machine
 from tracker.cellular_data import CellularDataClient
-from tracker.cycle import CycleState, run_cycle
+from tracker.cycle import CycleState, prepare_for_sleep, run_cycle
 from tracker.gnss import GnssReader
 from tracker.modem import AtModem
 from tracker.pmu import PmuController
@@ -36,9 +36,15 @@ def main():
         LOG(f"{cycle_state=}")
     except Exception as exc:  # noqa: BLE001  # want to catch all remaining exceptions
         LOG("Cycle failed. TODO: catch this exception:")
-        LOG(f"{exc}")
+        LOG(f"run_cycle - {exc}")
     elapsed_time_ms = time.ticks_diff(time.ticks_ms(), start_time_ms)
     LOG(f"Cycle time: {elapsed_time_ms / 1000} s")
+
+    # prepare for sleep
+    try:
+        prepare_for_sleep(hw_functions["pmu"], hw_functions["modem"])
+    except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
+        LOG(f"prepare_for_sleep - {exc}")
 
     # sleep
     if pmu.get_battery_percent() == -1:

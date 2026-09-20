@@ -16,7 +16,6 @@ class CycleState:
     MODEM_POWER_ON_FAILED = "MODEM_POWER_ON_FAILED"
     SIM_NOT_READY = "SIM_NOT_READY"
     POST_FAILED = "POST_FAILED"
-    SLEEP_PREPARATION_FAILED = "SLEEP_PREPARATION_FAILED"
     FINISHED = "FINISHED"
 
 
@@ -158,11 +157,5 @@ def run_cycle(config, hw_functions):
         return CycleState.POST_FAILED
     finally:
         hw_functions["cellular_data"].disconnect()
-
-    try:
-        prepare_for_sleep(hw_functions["pmu"], hw_functions["modem"])
-    except Exception as exc:  # noqa: BLE001  # want to catch all exceptions
-        LOG(f"{exc}")
-        return CycleState.SLEEP_PREPARATION_FAILED
 
     return CycleState.FINISHED
