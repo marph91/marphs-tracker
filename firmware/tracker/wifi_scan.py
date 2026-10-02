@@ -48,9 +48,10 @@ def home_ssid_present(results, home_ssids):
     if not home_ssids:
         return False
     for ap in results:
-        if ap["ssid"] in home_ssids:
-            LOG("home SSID detected")
-            return ap["ssid"]
+        ssid = ap["ssid"]
+        if ssid in home_ssids:
+            LOG(f'home SSID "{ssid}" detected')
+            return ssid
     return False
 
 
